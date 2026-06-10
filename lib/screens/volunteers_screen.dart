@@ -72,6 +72,44 @@ class _VolunteersScreenState extends State<VolunteersScreen> {
     );
   }
 
+  void editVolunteer(int index) {
+    final controller = TextEditingController(
+      text: volunteers[index],
+    );
+
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Editar voluntario'),
+        content: TextField(
+          controller: controller,
+          decoration: const InputDecoration(
+            hintText: 'Nombre',
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancelar'),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              if (controller.text.trim().isNotEmpty) {
+                setState(() {
+                  volunteers[index] = controller.text.trim();
+                });
+
+                saveVolunteers();
+              }
+              Navigator.pop(context);
+            },
+            child: const Text('Guardar'),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -84,6 +122,7 @@ class _VolunteersScreenState extends State<VolunteersScreen> {
           return ListTile(
             leading: const Icon(Icons.person),
             title: Text(volunteers[index]),
+            onTap: () => editVolunteer(index),
           );
         },
       ),
