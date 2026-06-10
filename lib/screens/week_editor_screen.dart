@@ -5,6 +5,7 @@ import '../models/assignment.dart';
 import '../models/volunteer.dart';
 import '../models/event_templates.dart';
 import '../services/volunteer_storage_service.dart';
+import '../services/assignment_storage_service.dart';
 
 class WeekEditorScreen extends StatefulWidget {
   const WeekEditorScreen({super.key});
@@ -49,42 +50,7 @@ class _WeekEditorScreenState extends State<WeekEditorScreen> {
       volunteers = savedVolunteers;
     });
   }
-  Future<void> saveAssignments() async {
-    final prefs = await SharedPreferences.getInstance();
-
-    final alabanzaData =
-    alabanza.map((a) => a.volunteerId ?? '').toList();
-    final estudioData =
-    estudio.map((a) => a.volunteerId ?? '').toList();
-    final ensenanzaData =
-    ensenanza.map((a) => a.volunteerId ?? '').toList();
-
-    debugPrint(
-      'saveAssignments alabanza_assignments_v2: $alabanzaData',
-    );
-    debugPrint(
-      'saveAssignments estudio_assignments_v2: $estudioData',
-    );
-    debugPrint(
-      'saveAssignments ensenanza_assignments_v2: $ensenanzaData',
-    );
-
-    await prefs.setStringList(
-      'alabanza_assignments_v2',
-      alabanzaData,
-    );
-
-    await prefs.setStringList(
-      'ensenanza_assignments_v2',
-      ensenanzaData,
-    );
-
-    await prefs.setStringList(
-      'estudio_assignments_v2',
-      estudioData,
-    );
-  }
-
+  
   Future<void> loadAssignments() async {
     final prefs = await SharedPreferences.getInstance();
 
@@ -152,7 +118,11 @@ class _WeekEditorScreenState extends State<WeekEditorScreen> {
       debugPrint(
         'loadAssignments saving migrated legacy assignments',
       );
-      await saveAssignments();
+      await AssignmentStorageService.saveAssignments(
+        alabanza: alabanza,
+        estudio: estudio,
+        ensenanza: ensenanza,
+      );
     }
 
     setState(() {});
@@ -227,9 +197,11 @@ class _WeekEditorScreenState extends State<WeekEditorScreen> {
       a.volunteerId = null;
     }
 
-    await saveAssignments();
-
-    setState(() {});
+    await AssignmentStorageService.saveAssignments(
+      alabanza: alabanza,
+      estudio: estudio,
+      ensenanza: ensenanza,
+    );
   }
 
   String? dropdownValueFor(Assignment assignment) {
@@ -353,7 +325,11 @@ class _WeekEditorScreenState extends State<WeekEditorScreen> {
                   setState(() {
                     assignment.volunteerId = value;
                   });
-                  saveAssignments();
+                  AssignmentStorageService.saveAssignments(
+                    alabanza: alabanza,
+                    estudio: estudio,
+                    ensenanza: ensenanza,
+                  );
                 },
               ),
             ),
@@ -419,7 +395,11 @@ class _WeekEditorScreenState extends State<WeekEditorScreen> {
                     assignment.volunteerId = value;
                   });
 
-                  saveAssignments();
+                  AssignmentStorageService.saveAssignments(
+                    alabanza: alabanza,
+                    estudio: estudio,
+                    ensenanza: ensenanza,
+                  );
                 },
               ),
             ),
@@ -479,7 +459,11 @@ class _WeekEditorScreenState extends State<WeekEditorScreen> {
                   setState(() {
                     assignment.volunteerId = value;
                   });
-                  saveAssignments();
+                  AssignmentStorageService.saveAssignments(
+                    alabanza: alabanza,
+                    estudio: estudio,
+                    ensenanza: ensenanza,
+                  );
                 },
               ),
             ),

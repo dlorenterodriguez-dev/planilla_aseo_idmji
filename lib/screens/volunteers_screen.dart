@@ -25,7 +25,40 @@ class _VolunteersScreenState extends State<VolunteersScreen> {
       volunteers = savedVolunteers;
     });
   }
+  Future<void> confirmDeleteVolunteer(int index) async {
+    final volunteer = volunteers[index];
 
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Eliminar voluntario'),
+        content: Text(
+          '¿Seguro que deseas eliminar a ${volunteer.name}?\n\n'
+              'Las asignaciones asociadas quedarán vacías.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancelar'),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Eliminar'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            '${volunteer.name} pendiente de eliminar',
+          ),
+        ),
+      );
+    }
+  }
   Future<void> saveVolunteers() async {
     await VolunteerStorageService.saveVolunteers(volunteers);
   }
@@ -158,16 +191,26 @@ class _VolunteersScreenState extends State<VolunteersScreen> {
                 ? null
                 : const Text('Inactivo'),
             onTap: () => editVolunteer(index),
-            trailing: IconButton(
-              icon: Icon(
-                volunteer.isActive
-                    ? Icons.pause_circle
-                    : Icons.play_circle,
-              ),
-              tooltip: volunteer.isActive
-                  ? 'Desactivar'
-                  : 'Activar',
-              onPressed: () => toggleVolunteerStatus(index),
+            trailing: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                IconButton(
+                  icon: Icon(
+                    volunteer.isActive
+                        ? Icons.pause_circle
+                        : Icons.play_circle,
+                  ),
+                  tooltip: volunteer.isActive
+                      ? 'Desactivar'
+                      : 'Activar',
+                  onPressed: () => toggleVolunteerStatus(index),
+                ),
+                IconButton(
+                  icon: const Icon(Icons.delete),
+                  tooltip: 'Eliminar',
+                  onPressed: () => confirmDeleteVolunteer(index),
+                ),
+              ],
             ),
           );
         },
