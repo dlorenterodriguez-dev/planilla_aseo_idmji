@@ -50,7 +50,7 @@ class _WeekEditorScreenState extends State<WeekEditorScreen> {
       volunteers = savedVolunteers;
     });
   }
-  
+
   Future<void> loadAssignments() async {
     final prefs = await SharedPreferences.getInstance();
 
@@ -185,17 +185,19 @@ class _WeekEditorScreenState extends State<WeekEditorScreen> {
   }
 
   Future<void> clearAssignments() async {
-    for (final a in alabanza) {
-      a.volunteerId = null;
-    }
+    setState(() {
+      for (final a in alabanza) {
+        a.volunteerId = null;
+      }
 
-    for (final a in estudio) {
-      a.volunteerId = null;
-    }
+      for (final a in estudio) {
+        a.volunteerId = null;
+      }
 
-    for (final a in ensenanza) {
-      a.volunteerId = null;
-    }
+      for (final a in ensenanza) {
+        a.volunteerId = null;
+      }
+    });
 
     await AssignmentStorageService.saveAssignments(
       alabanza: alabanza,
