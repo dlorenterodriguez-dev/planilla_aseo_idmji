@@ -2,8 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../services/conflict_service.dart';
 import '../models/assignment.dart';
-import '../models/default_volunteers.dart';
+import '../models/volunteer.dart';
 import '../models/event_templates.dart';
+import '../services/volunteer_storage_service.dart';
 
 class WeekEditorScreen extends StatefulWidget {
   const WeekEditorScreen({super.key});
@@ -13,7 +14,7 @@ class WeekEditorScreen extends StatefulWidget {
 }
 
 class _WeekEditorScreenState extends State<WeekEditorScreen> {
-  List<String> volunteers = [];
+  List<Volunteer> volunteers = [];
 
   final List<Assignment> alabanza =
   EventTemplates.alabanza();
@@ -33,11 +34,11 @@ class _WeekEditorScreenState extends State<WeekEditorScreen> {
     });
   }
   Future<void> loadVolunteers() async {
-    final prefs = await SharedPreferences.getInstance();
+    final savedVolunteers =
+        await VolunteerStorageService.loadVolunteers();
 
     setState(() {
-      volunteers =
-          prefs.getStringList('volunteers') ?? defaultVolunteers;
+      volunteers = savedVolunteers;
     });
   }
   Future<void> saveAssignments() async {
@@ -131,6 +132,21 @@ class _WeekEditorScreenState extends State<WeekEditorScreen> {
 
     setState(() {});
   }
+
+  String? dropdownValueFor(Assignment assignment) {
+    final volunteer = assignment.volunteer;
+
+    if (volunteer == null) {
+      return null;
+    }
+
+    final exists = volunteers.any(
+      (currentVolunteer) => currentVolunteer.name == volunteer,
+    );
+
+    return exists ? volunteer : null;
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -201,7 +217,7 @@ class _WeekEditorScreenState extends State<WeekEditorScreen> {
                 bottom: 12,
               ),
               child: DropdownButtonFormField<String>(
-                value: assignment.volunteer,
+                value: dropdownValueFor(assignment),
                 decoration: InputDecoration(
                   labelText:
                   '${assignment.role} (${assignment.startTime}-${assignment.endTime})',
@@ -209,8 +225,8 @@ class _WeekEditorScreenState extends State<WeekEditorScreen> {
                 ),
                 items: volunteers.map((volunteer) {
                   return DropdownMenuItem(
-                    value: volunteer,
-                    child: Text(volunteer),
+                    value: volunteer.name,
+                    child: Text(volunteer.name),
                   );
                 }).toList(),
                 onChanged: (value) {
@@ -264,7 +280,7 @@ class _WeekEditorScreenState extends State<WeekEditorScreen> {
                 bottom: 12,
               ),
               child: DropdownButtonFormField<String>(
-                value: assignment.volunteer,
+                value: dropdownValueFor(assignment),
                 decoration: InputDecoration(
                   labelText:
                   '${assignment.role} (${assignment.startTime}-${assignment.endTime})',
@@ -272,8 +288,8 @@ class _WeekEditorScreenState extends State<WeekEditorScreen> {
                 ),
                 items: volunteers.map((volunteer) {
                   return DropdownMenuItem(
-                    value: volunteer,
-                    child: Text(volunteer),
+                    value: volunteer.name,
+                    child: Text(volunteer.name),
                   );
                 }).toList(),
                 onChanged: (value) {
@@ -323,7 +339,7 @@ class _WeekEditorScreenState extends State<WeekEditorScreen> {
                 bottom: 12,
               ),
               child: DropdownButtonFormField<String>(
-                value: assignment.volunteer,
+                value: dropdownValueFor(assignment),
                 decoration: InputDecoration(
                   labelText:
                   '${assignment.role} (${assignment.startTime}-${assignment.endTime})',
@@ -331,8 +347,8 @@ class _WeekEditorScreenState extends State<WeekEditorScreen> {
                 ),
                 items: volunteers.map((volunteer) {
                   return DropdownMenuItem(
-                    value: volunteer,
-                    child: Text(volunteer),
+                    value: volunteer.name,
+                    child: Text(volunteer.name),
                   );
                 }).toList(),
                 onChanged: (value) {

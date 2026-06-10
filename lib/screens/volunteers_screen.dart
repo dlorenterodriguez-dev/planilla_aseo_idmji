@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:shared_preferences/shared_preferences.dart';
-import '../models/default_volunteers.dart';
+import '../models/volunteer.dart';
+import '../services/volunteer_storage_service.dart';
 
 class VolunteersScreen extends StatefulWidget {
   const VolunteersScreen({super.key});
@@ -10,7 +10,7 @@ class VolunteersScreen extends StatefulWidget {
 }
 
 class _VolunteersScreenState extends State<VolunteersScreen> {
-  List<String> volunteers = [];
+  List<Volunteer> volunteers = [];
   @override
   void initState() {
     super.initState();
@@ -18,23 +18,16 @@ class _VolunteersScreenState extends State<VolunteersScreen> {
   }
 
   Future<void> loadVolunteers() async {
-    final prefs = await SharedPreferences.getInstance();
-
-    final savedVolunteers = prefs.getStringList('volunteers');
+    final savedVolunteers =
+        await VolunteerStorageService.loadVolunteers();
 
     setState(() {
-      volunteers = savedVolunteers ??
-          defaultVolunteers;
+      volunteers = savedVolunteers;
     });
   }
 
   Future<void> saveVolunteers() async {
-    final prefs = await SharedPreferences.getInstance();
-
-    await prefs.setStringList(
-      'volunteers',
-      volunteers,
-    );
+    await VolunteerStorageService.saveVolunteers(volunteers);
   }
   void addVolunteer() {
     final controller = TextEditingController();
@@ -58,7 +51,15 @@ class _VolunteersScreenState extends State<VolunteersScreen> {
             onPressed: () {
               if (controller.text.trim().isNotEmpty) {
                 setState(() {
-                  volunteers.add(controller.text.trim());
+                  volunteers.add(
+                    Volunteer(
+                      id: DateTime.now()
+                          .millisecondsSinceEpoch
+                          .toString(),
+                      name: controller.text.trim(),
+                      isActive: true,
+                    ),
+                  );
                 });
 
                 saveVolunteers();
@@ -74,7 +75,7 @@ class _VolunteersScreenState extends State<VolunteersScreen> {
 
   void editVolunteer(int index) {
     final controller = TextEditingController(
-      text: volunteers[index],
+      text: volunteers[index].name,
     );
 
     showDialog(
@@ -96,7 +97,13 @@ class _VolunteersScreenState extends State<VolunteersScreen> {
             onPressed: () {
               if (controller.text.trim().isNotEmpty) {
                 setState(() {
-                  volunteers[index] = controller.text.trim();
+                  final volunteer = volunteers[index];
+
+                  volunteers[index] = Volunteer(
+                    id: volunteer.id,
+                    name: controller.text.trim(),
+                    isActive: volunteer.isActive,
+                  );
                 });
 
                 saveVolunteers();
@@ -121,7 +128,7 @@ class _VolunteersScreenState extends State<VolunteersScreen> {
         itemBuilder: (context, index) {
           return ListTile(
             leading: const Icon(Icons.person),
-            title: Text(volunteers[index]),
+            title: Text(volunteers[index].name),
             onTap: () => editVolunteer(index),
           );
         },
