@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../models/default_volunteers.dart';
 
 class VolunteersScreen extends StatefulWidget {
   const VolunteersScreen({super.key});
@@ -23,15 +24,7 @@ class _VolunteersScreenState extends State<VolunteersScreen> {
 
     setState(() {
       volunteers = savedVolunteers ??
-          [
-            'Orlando',
-            'Mario',
-            'Daniel',
-            'Yeison',
-            'Javier',
-            'Edulfo',
-            'Kevin',
-          ];
+          defaultVolunteers;
     });
   }
 

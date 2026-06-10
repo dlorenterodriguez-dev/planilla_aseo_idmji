@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../services/conflict_service.dart';
 import '../models/assignment.dart';
+import '../models/default_volunteers.dart';
 import '../models/event_templates.dart';
 
 class WeekEditorScreen extends StatefulWidget {
@@ -36,7 +37,7 @@ class _WeekEditorScreenState extends State<WeekEditorScreen> {
 
     setState(() {
       volunteers =
-          prefs.getStringList('volunteers') ?? [];
+          prefs.getStringList('volunteers') ?? defaultVolunteers;
     });
   }
   Future<void> saveAssignments() async {
