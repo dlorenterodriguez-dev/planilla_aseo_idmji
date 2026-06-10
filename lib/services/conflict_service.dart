@@ -4,12 +4,12 @@ class ConflictService {
   static bool hasConflict(
       List<Assignment> assignments,
       Assignment currentAssignment,
-      String volunteer,
+      String volunteerId,
       ) {
     for (final assignment in assignments) {
       if (assignment == currentAssignment) continue;
 
-      if (assignment.volunteer != volunteer) continue;
+      if (assignment.volunteerId != volunteerId) continue;
 
       if (_overlaps(
         currentAssignment.startTime,

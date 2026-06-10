@@ -45,24 +45,34 @@ class _WeekEditorScreenState extends State<WeekEditorScreen> {
     final prefs = await SharedPreferences.getInstance();
 
     final alabanzaData =
-    alabanza.map((a) => a.volunteer ?? '').toList();
+    alabanza.map((a) => a.volunteerId ?? '').toList();
     final estudioData =
-    estudio.map((a) => a.volunteer ?? '').toList();
+    estudio.map((a) => a.volunteerId ?? '').toList();
     final ensenanzaData =
-    ensenanza.map((a) => a.volunteer ?? '').toList();
+    ensenanza.map((a) => a.volunteerId ?? '').toList();
+
+    debugPrint(
+      'saveAssignments alabanza_assignments_v2: $alabanzaData',
+    );
+    debugPrint(
+      'saveAssignments estudio_assignments_v2: $estudioData',
+    );
+    debugPrint(
+      'saveAssignments ensenanza_assignments_v2: $ensenanzaData',
+    );
 
     await prefs.setStringList(
-      'alabanza_assignments',
+      'alabanza_assignments_v2',
       alabanzaData,
     );
 
     await prefs.setStringList(
-      'ensenanza_assignments',
+      'ensenanza_assignments_v2',
       ensenanzaData,
     );
 
     await prefs.setStringList(
-      'estudio_assignments',
+      'estudio_assignments_v2',
       estudioData,
     );
   }
@@ -71,61 +81,142 @@ class _WeekEditorScreenState extends State<WeekEditorScreen> {
     final prefs = await SharedPreferences.getInstance();
 
     final alabanzaData =
-    prefs.getStringList('alabanza_assignments');
+    prefs.getStringList('alabanza_assignments_v2');
 
     final estudioData =
-    prefs.getStringList('estudio_assignments');
+    prefs.getStringList('estudio_assignments_v2');
 
     final ensenanzaData =
-    prefs.getStringList('ensenanza_assignments');
+    prefs.getStringList('ensenanza_assignments_v2');
+
+    debugPrint(
+      'loadAssignments alabanza_assignments_v2 exists: ${alabanzaData != null}, count: ${alabanzaData?.length ?? 0}',
+    );
+    debugPrint(
+      'loadAssignments estudio_assignments_v2 exists: ${estudioData != null}, count: ${estudioData?.length ?? 0}',
+    );
+    debugPrint(
+      'loadAssignments ensenanza_assignments_v2 exists: ${ensenanzaData != null}, count: ${ensenanzaData?.length ?? 0}',
+    );
+
+    var migratedLegacyAssignments = false;
 
     if (alabanzaData != null) {
-      for (int i = 0;
-      i < alabanza.length &&
-          i < alabanzaData.length;
-      i++) {
-        if (alabanzaData[i].isNotEmpty) {
-          alabanza[i].volunteer =
-          alabanzaData[i];
-        }
-      }
+      loadAssignmentIds(alabanza, alabanzaData);
+    } else {
+      debugPrint(
+        'loadAssignments migrating alabanza from legacy key',
+      );
+      loadLegacyAssignmentNames(
+        alabanza,
+        prefs.getStringList('alabanza_assignments'),
+      );
+      migratedLegacyAssignments = true;
     }
+
     if (estudioData != null) {
-      for (int i = 0;
-      i < estudio.length &&
-          i < estudioData.length;
-      i++) {
-        if (estudioData[i].isNotEmpty) {
-          estudio[i].volunteer =
-          estudioData[i];
-        }
-      }
+      loadAssignmentIds(estudio, estudioData);
+    } else {
+      debugPrint(
+        'loadAssignments migrating estudio from legacy key',
+      );
+      loadLegacyAssignmentNames(
+        estudio,
+        prefs.getStringList('estudio_assignments'),
+      );
+      migratedLegacyAssignments = true;
     }
+
     if (ensenanzaData != null) {
-      for (int i = 0;
-      i < ensenanza.length &&
-          i < ensenanzaData.length;
-      i++) {
-        if (ensenanzaData[i].isNotEmpty) {
-          ensenanza[i].volunteer =
-          ensenanzaData[i];
-        }
-      }
+      loadAssignmentIds(ensenanza, ensenanzaData);
+    } else {
+      debugPrint(
+        'loadAssignments migrating ensenanza from legacy key',
+      );
+      loadLegacyAssignmentNames(
+        ensenanza,
+        prefs.getStringList('ensenanza_assignments'),
+      );
+      migratedLegacyAssignments = true;
+    }
+
+    if (migratedLegacyAssignments) {
+      debugPrint(
+        'loadAssignments saving migrated legacy assignments',
+      );
+      await saveAssignments();
     }
 
     setState(() {});
   }
+
+  void loadAssignmentIds(
+    List<Assignment> assignments,
+    List<String>? assignmentData,
+  ) {
+    if (assignmentData == null) {
+      return;
+    }
+
+    for (int i = 0;
+        i < assignments.length &&
+            i < assignmentData.length;
+        i++) {
+      if (assignmentData[i].isNotEmpty) {
+        assignments[i].volunteerId =
+            resolveVolunteerId(assignmentData[i]);
+      }
+    }
+  }
+
+  void loadLegacyAssignmentNames(
+    List<Assignment> assignments,
+    List<String>? assignmentData,
+  ) {
+    if (assignmentData == null) {
+      return;
+    }
+
+    for (int i = 0;
+        i < assignments.length &&
+            i < assignmentData.length;
+        i++) {
+      if (assignmentData[i].isNotEmpty) {
+        assignments[i].volunteerId =
+            resolveVolunteerIdByName(assignmentData[i]);
+      }
+    }
+  }
+
+  String? resolveVolunteerId(String volunteerId) {
+    final exists = volunteers.any(
+      (volunteer) => volunteer.id == volunteerId,
+    );
+
+    return exists ? volunteerId : null;
+  }
+
+  String? resolveVolunteerIdByName(String volunteerName) {
+    for (final volunteer in volunteers) {
+      if (volunteer.name == volunteerName) {
+        return volunteer.id;
+      }
+    }
+
+    return null;
+  }
+
   Future<void> clearAssignments() async {
     for (final a in alabanza) {
-      a.volunteer = null;
+      a.volunteerId = null;
     }
 
     for (final a in estudio) {
-      a.volunteer = null;
+      a.volunteerId = null;
     }
 
     for (final a in ensenanza) {
-      a.volunteer = null;
+      a.volunteerId = null;
     }
 
     await saveAssignments();
@@ -134,17 +225,17 @@ class _WeekEditorScreenState extends State<WeekEditorScreen> {
   }
 
   String? dropdownValueFor(Assignment assignment) {
-    final volunteer = assignment.volunteer;
+    final volunteerId = assignment.volunteerId;
 
-    if (volunteer == null) {
+    if (volunteerId == null) {
       return null;
     }
 
     final exists = volunteers.any(
-      (currentVolunteer) => currentVolunteer.name == volunteer,
+      (volunteer) => volunteer.id == volunteerId,
     );
 
-    return exists ? volunteer : null;
+    return exists ? volunteerId : null;
   }
 
   @override
@@ -225,7 +316,7 @@ class _WeekEditorScreenState extends State<WeekEditorScreen> {
                 ),
                 items: volunteers.map((volunteer) {
                   return DropdownMenuItem(
-                    value: volunteer.name,
+                    value: volunteer.id,
                     child: Text(volunteer.name),
                   );
                 }).toList(),
@@ -252,7 +343,7 @@ class _WeekEditorScreenState extends State<WeekEditorScreen> {
                   }
 
                   setState(() {
-                    assignment.volunteer = value;
+                    assignment.volunteerId = value;
                   });
                   saveAssignments();
                 },
@@ -288,7 +379,7 @@ class _WeekEditorScreenState extends State<WeekEditorScreen> {
                 ),
                 items: volunteers.map((volunteer) {
                   return DropdownMenuItem(
-                    value: volunteer.name,
+                    value: volunteer.id,
                     child: Text(volunteer.name),
                   );
                 }).toList(),
@@ -315,7 +406,7 @@ class _WeekEditorScreenState extends State<WeekEditorScreen> {
                   }
 
                   setState(() {
-                    assignment.volunteer = value;
+                    assignment.volunteerId = value;
                   });
 
                   saveAssignments();
@@ -347,7 +438,7 @@ class _WeekEditorScreenState extends State<WeekEditorScreen> {
                 ),
                 items: volunteers.map((volunteer) {
                   return DropdownMenuItem(
-                    value: volunteer.name,
+                    value: volunteer.id,
                     child: Text(volunteer.name),
                   );
                 }).toList(),
@@ -374,7 +465,7 @@ class _WeekEditorScreenState extends State<WeekEditorScreen> {
                   }
 
                   setState(() {
-                    assignment.volunteer = value;
+                    assignment.volunteerId = value;
                   });
                   saveAssignments();
                 },
