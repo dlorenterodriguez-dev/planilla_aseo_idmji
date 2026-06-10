@@ -116,7 +116,19 @@ class _VolunteersScreenState extends State<VolunteersScreen> {
       ),
     );
   }
+  void toggleVolunteerStatus(int index) {
+    setState(() {
+      final volunteer = volunteers[index];
 
+      volunteers[index] = Volunteer(
+        id: volunteer.id,
+        name: volunteer.name,
+        isActive: !volunteer.isActive,
+      );
+    });
+
+    saveVolunteers();
+  }
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -126,10 +138,37 @@ class _VolunteersScreenState extends State<VolunteersScreen> {
       body: ListView.builder(
         itemCount: volunteers.length,
         itemBuilder: (context, index) {
+          final volunteer = volunteers[index];
+
           return ListTile(
-            leading: const Icon(Icons.person),
-            title: Text(volunteers[index].name),
+            leading: Icon(
+              volunteer.isActive
+                  ? Icons.person
+                  : Icons.person_off,
+            ),
+            title: Text(
+              volunteer.name,
+              style: TextStyle(
+                color: volunteer.isActive
+                    ? null
+                    : Colors.grey,
+              ),
+            ),
+            subtitle: volunteer.isActive
+                ? null
+                : const Text('Inactivo'),
             onTap: () => editVolunteer(index),
+            trailing: IconButton(
+              icon: Icon(
+                volunteer.isActive
+                    ? Icons.pause_circle
+                    : Icons.play_circle,
+              ),
+              tooltip: volunteer.isActive
+                  ? 'Desactivar'
+                  : 'Activar',
+              onPressed: () => toggleVolunteerStatus(index),
+            ),
           );
         },
       ),

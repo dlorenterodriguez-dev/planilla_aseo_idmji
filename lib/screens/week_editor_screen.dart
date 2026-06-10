@@ -15,6 +15,14 @@ class WeekEditorScreen extends StatefulWidget {
 
 class _WeekEditorScreenState extends State<WeekEditorScreen> {
   List<Volunteer> volunteers = [];
+  List<Volunteer> availableVolunteersFor(
+      Assignment assignment,
+      ) {
+    return volunteers.where((volunteer) {
+      return volunteer.isActive ||
+          volunteer.id == assignment.volunteerId;
+    }).toList();
+  }
 
   final List<Assignment> alabanza =
   EventTemplates.alabanza();
@@ -314,7 +322,7 @@ class _WeekEditorScreenState extends State<WeekEditorScreen> {
                   '${assignment.role} (${assignment.startTime}-${assignment.endTime})',
                   border: const OutlineInputBorder(),
                 ),
-                items: volunteers.map((volunteer) {
+                  items: availableVolunteersFor(assignment,).map((volunteer)  {
                   return DropdownMenuItem(
                     value: volunteer.id,
                     child: Text(volunteer.name),
@@ -377,7 +385,9 @@ class _WeekEditorScreenState extends State<WeekEditorScreen> {
                   '${assignment.role} (${assignment.startTime}-${assignment.endTime})',
                   border: const OutlineInputBorder(),
                 ),
-                items: volunteers.map((volunteer) {
+                items: availableVolunteersFor(
+                  assignment,
+                ).map((volunteer) {
                   return DropdownMenuItem(
                     value: volunteer.id,
                     child: Text(volunteer.name),
@@ -436,7 +446,9 @@ class _WeekEditorScreenState extends State<WeekEditorScreen> {
                   '${assignment.role} (${assignment.startTime}-${assignment.endTime})',
                   border: const OutlineInputBorder(),
                 ),
-                items: volunteers.map((volunteer) {
+                items: availableVolunteersFor(
+                  assignment,
+                ).map((volunteer) {
                   return DropdownMenuItem(
                     value: volunteer.id,
                     child: Text(volunteer.name),
