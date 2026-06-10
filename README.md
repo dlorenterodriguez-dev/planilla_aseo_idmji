@@ -1,17 +1,25 @@
-# planilla_idmji
+# App Voluntariado IDMJI
 
-A new Flutter project.
+Aplicación Flutter para la gestión de voluntarios y asignaciones de la IDMJI.
 
-## Getting Started
+## Funcionalidades actuales
 
-This project is a starting point for a Flutter application.
+- Gestión de voluntarios
+- Persistencia local mediante SharedPreferences
+- Planificación semanal
+- Cultos:
+  - Martes - Alabanza
+  - Sábado - Estudio
+  - Domingo - Enseñanza
+- Detección de conflictos horarios
+- Limpieza de semana
 
-A few resources to get you started if this is your first Flutter project:
+## Tecnologías
 
-- [Learn Flutter](https://docs.flutter.dev/get-started/learn-flutter)
-- [Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Flutter learning resources](https://docs.flutter.dev/reference/learning-resources)
+- Flutter
+- Dart
+- SharedPreferences
 
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+## Estado
+
+Proyecto en desarrollo.
