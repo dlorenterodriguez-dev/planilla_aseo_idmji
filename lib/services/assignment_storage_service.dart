@@ -102,4 +102,11 @@ class AssignmentStorageService {
       ensenanza,
     );
   }
+  static Future<List<String>> loadAssignmentIds(
+      String key,
+      ) async {
+    final prefs = await SharedPreferences.getInstance();
+
+    return prefs.getStringList(key) ?? [];
+  }
 }

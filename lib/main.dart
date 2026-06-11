@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'screens/volunteers_screen.dart';
 import 'screens/week_editor_screen.dart';
+import 'screens/planilla_preview_screen.dart';
 
 void main() {
   runApp(const PlanillaApp());
@@ -69,7 +70,14 @@ class HomePage extends StatelessWidget {
             SizedBox(
               width: double.infinity,
               child: ElevatedButton(
-                onPressed: () {},
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => const PlanillaPreviewScreen(),
+                    ),
+                  );
+                },
                 child: const Text('Generar planilla'),
               ),
             ),
