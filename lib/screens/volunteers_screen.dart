@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../models/volunteer.dart';
 import '../services/volunteer_storage_service.dart';
+import '../services/assignment_storage_service.dart';
 
 class VolunteersScreen extends StatefulWidget {
   const VolunteersScreen({super.key});
@@ -27,14 +28,18 @@ class _VolunteersScreenState extends State<VolunteersScreen> {
   }
   Future<void> confirmDeleteVolunteer(int index) async {
     final volunteer = volunteers[index];
-
+    final assignmentCount =
+    await AssignmentStorageService.countVolunteerAssignments(
+      volunteer.id,
+    );
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Eliminar voluntario'),
         content: Text(
           '¿Seguro que deseas eliminar a ${volunteer.name}?\n\n'
-              'Las asignaciones asociadas quedarán vacías.',
+              'Tiene $assignmentCount asignaciones.\n'
+              'Las asignaciones quedarán vacías.',
         ),
         actions: [
           TextButton(
@@ -50,10 +55,20 @@ class _VolunteersScreenState extends State<VolunteersScreen> {
     );
 
     if (confirmed == true) {
+      await AssignmentStorageService
+          .removeVolunteerFromAssignments(
+        volunteer.id,
+      );
+      setState(() {
+        volunteers.removeAt(index);
+      });
+
+      await saveVolunteers();
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
-            '${volunteer.name} pendiente de eliminar',
+            '${volunteer.name} Persona eliminada',
           ),
         ),
       );
