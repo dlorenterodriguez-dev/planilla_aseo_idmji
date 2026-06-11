@@ -68,7 +68,7 @@ class _VolunteersScreenState extends State<VolunteersScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
-            '${volunteer.name} Persona eliminada',
+            '${volunteer.name} - Persona eliminada',
           ),
         ),
       );
