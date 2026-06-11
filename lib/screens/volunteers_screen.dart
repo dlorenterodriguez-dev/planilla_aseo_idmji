@@ -164,10 +164,58 @@ class _VolunteersScreenState extends State<VolunteersScreen> {
       ),
     );
   }
-  void toggleVolunteerStatus(int index) {
-    setState(() {
-      final volunteer = volunteers[index];
+  Future<void> toggleVolunteerStatus(int index) async {
+    final volunteer = volunteers[index];
 
+    if (volunteer.isActive) {
+      final assignmentCount =
+      await AssignmentStorageService.countVolunteerAssignments(
+        volunteer.id,
+      );
+
+      if (assignmentCount > 0) {
+        final action = await showDialog<String>(
+          context: context,
+          builder: (context) => AlertDialog(
+            title: Text(volunteer.name),
+            content: Text(
+              'Tiene $assignmentCount asignaciones.\n\n'
+                  '¿Qué deseas hacer?',
+            ),
+            actions: [
+              TextButton(
+                onPressed: () =>
+                    Navigator.pop(context, 'cancel'),
+                child: const Text('Cancelar'),
+              ),
+              TextButton(
+                onPressed: () =>
+                    Navigator.pop(context, 'keep'),
+                child: const Text('Conservar asignaciones'),
+              ),
+              ElevatedButton(
+                onPressed: () =>
+                    Navigator.pop(context, 'remove'),
+                child: const Text('Eliminar asignaciones'),
+              ),
+            ],
+          ),
+        );
+
+        if (action == 'cancel' || action == null) {
+          return;
+        }
+
+        if (action == 'remove') {
+          await AssignmentStorageService
+              .removeVolunteerFromAssignments(
+            volunteer.id,
+          );
+        }
+      }
+    }
+
+    setState(() {
       volunteers[index] = Volunteer(
         id: volunteer.id,
         name: volunteer.name,
