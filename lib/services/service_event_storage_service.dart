@@ -23,6 +23,24 @@ class ServiceEventStorageService {
         .toList();
   }
 
+  static Future<void> addEvent(ServiceEvent event) async {
+    final events = await loadEvents();
+
+    final alreadyExists = events.any(
+          (e) =>
+      e.eventId == event.eventId &&
+          e.volunteerId == event.volunteerId &&
+          e.serviceType == event.serviceType,
+    );
+
+    if (alreadyExists) {
+      return;
+    }
+
+    events.add(event);
+    await saveEvents(events);
+  }
+
   static Future<void> saveEvents(
       List<ServiceEvent> events,
       ) async {
