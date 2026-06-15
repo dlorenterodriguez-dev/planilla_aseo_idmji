@@ -11,12 +11,28 @@ class VolunteersScreen extends StatefulWidget {
 }
 
 class _VolunteersScreenState extends State<VolunteersScreen> {
+  bool ascendingOrder = true;
   List<Volunteer> volunteers = [];
+
   @override
   void initState() {
     super.initState();
     loadVolunteers();
   }
+
+  void sortVolunteers() {
+    volunteers.sort((a, b) {
+      final comparison =
+      a.name.toLowerCase().compareTo(
+        b.name.toLowerCase(),
+      );
+
+      return ascendingOrder
+          ? comparison
+          : -comparison;
+    });
+  }
+
 
   Future<void> loadVolunteers() async {
     final savedVolunteers =
@@ -24,6 +40,7 @@ class _VolunteersScreenState extends State<VolunteersScreen> {
 
     setState(() {
       volunteers = savedVolunteers;
+      sortVolunteers();
     });
   }
   Future<void> confirmDeleteVolunteer(int index) async {
@@ -79,17 +96,145 @@ class _VolunteersScreenState extends State<VolunteersScreen> {
   }
   void addVolunteer() {
     final controller = TextEditingController();
+    bool canVigilance = false;
+    bool canMicrophone = false;
+    bool canAccommodation = false;
+    bool firstVigilanceOnly = false;
+    bool canCleaning = false;
+    bool canBookTable = false;
+    bool canAudiovisuals = false;
 
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
+        builder: (context) => StatefulBuilder(
+          builder: (context, setDialogState) => AlertDialog(
         title: const Text('Añadir voluntario'),
-        content: TextField(
-          controller: controller,
-          decoration: const InputDecoration(
-            hintText: 'Nombre',
-          ),
-        ),
+            content: SingleChildScrollView(
+              child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                TextField(
+                  controller: controller,
+                  decoration: const InputDecoration(
+                    hintText: 'Nombre',
+                  ),
+                ),
+                CheckboxListTile(
+                  contentPadding: EdgeInsets.zero,
+                  title: const Row(
+                    children: [
+                      Icon(Icons.visibility, size: 20),
+                      SizedBox(width: 8),
+                      Text('Vigilancia'),
+                    ],
+                  ),
+                  value: canVigilance,
+                  onChanged: (value) {
+                    setDialogState(() {
+                      canVigilance = value!;
+                    });
+                  },
+                ),
+                CheckboxListTile(
+                  contentPadding: EdgeInsets.zero,
+                  title: const Row(
+                    children: [
+                      Icon(Icons.mic, size: 20),
+                      SizedBox(width: 8),
+                      Text('Micrófono'),
+                    ],
+                  ),
+                  value: canMicrophone,
+                  onChanged: (value) {
+                    setDialogState(() {
+                      canMicrophone = value!;
+                    });
+                  },
+                ),
+                CheckboxListTile(
+                  contentPadding: EdgeInsets.zero,
+                  title: const Row(
+                    children: [
+                      Icon(Icons.chair_alt, size: 20),
+                      SizedBox(width: 8),
+                      Text('Acomodación'),
+                    ],
+                  ),
+                  value: canAccommodation,
+                  onChanged: (value) {
+                    setDialogState(() {
+                      canAccommodation = value!;
+                    });
+                  },
+                ),
+                CheckboxListTile(
+                  contentPadding: EdgeInsets.zero,
+                  title: const Row(
+                    children: [
+                      Icon(Icons.cleaning_services, size: 20),
+                      SizedBox(width: 8),
+                      Text('Aseo'),
+                    ],
+                  ),
+                  value: canCleaning,
+                  onChanged: (value) {
+                    setDialogState(() {
+                      canCleaning = value!;
+                    });
+                  },
+                ),
+
+                CheckboxListTile(
+                  contentPadding: EdgeInsets.zero,
+                  title: const Row(
+                    children: [
+                      Icon(Icons.menu_book, size: 20),
+                      SizedBox(width: 8),
+                      Text('Biblias'),
+                    ],
+                  ),
+                  value: canBookTable,
+                  onChanged: (value) {
+                    setDialogState(() {
+                      canBookTable = value!;
+                    });
+                  },
+                ),
+
+                CheckboxListTile(
+                  contentPadding: EdgeInsets.zero,
+                  title: const Row(
+                    children: [
+                      Icon(Icons.cast_connected, size: 20),
+                      SizedBox(width: 8),
+                      Text('Audiovisuales'),
+                    ],
+                  ),
+                  value: canAudiovisuals,
+                  onChanged: (value) {
+                    setDialogState(() {
+                      canAudiovisuals = value!;
+                    });
+                  },
+                ),
+                CheckboxListTile(
+                  contentPadding: EdgeInsets.zero,
+                  title: const Row(
+                    children: [
+                      Icon(Icons.workspace_premium, size: 20),
+                      SizedBox(width: 8),
+                      Text('Pastor'),
+                    ],
+                  ),                  value: firstVigilanceOnly,
+                  onChanged: (value) {
+                    setDialogState(() {
+                      firstVigilanceOnly = value!;
+                    });
+                  },
+                ),
+              ],
+              ),
+            ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
@@ -100,14 +245,22 @@ class _VolunteersScreenState extends State<VolunteersScreen> {
               if (controller.text.trim().isNotEmpty) {
                 setState(() {
                   volunteers.add(
-                    Volunteer(
-                      id: DateTime.now()
-                          .millisecondsSinceEpoch
-                          .toString(),
-                      name: controller.text.trim(),
-                      isActive: true,
-                    ),
+                      Volunteer(
+                        id: DateTime.now()
+                            .millisecondsSinceEpoch
+                            .toString(),
+                        name: controller.text.trim(),
+                        isActive: true,
+                        canVigilance: canVigilance,
+                        canMicrophone: canMicrophone,
+                        canAccommodation: canAccommodation,
+                        firstVigilanceOnly: firstVigilanceOnly,
+                        canCleaning: canCleaning,
+                        canBookTable: canBookTable,
+                        canAudiovisuals: canAudiovisuals,
+                      )
                   );
+                  sortVolunteers();
                 });
 
                 saveVolunteers();
@@ -118,6 +271,7 @@ class _VolunteersScreenState extends State<VolunteersScreen> {
           ),
         ],
       ),
+      ),
     );
   }
 
@@ -125,17 +279,146 @@ class _VolunteersScreenState extends State<VolunteersScreen> {
     final controller = TextEditingController(
       text: volunteers[index].name,
     );
+    bool canVigilance = volunteers[index].canVigilance;
+    bool canMicrophone = volunteers[index].canMicrophone;
+    bool canAccommodation = volunteers[index].canAccommodation;
+    bool firstVigilanceOnly = volunteers[index].firstVigilanceOnly;
+    bool canCleaning = volunteers[index].canCleaning;
+    bool canBookTable = volunteers[index].canBookTable;
+    bool canAudiovisuals = volunteers[index].canAudiovisuals;
 
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
+        builder: (context) => StatefulBuilder(
+          builder: (context, setDialogState) => AlertDialog(
         title: const Text('Editar voluntario'),
-        content: TextField(
-          controller: controller,
-          decoration: const InputDecoration(
-            hintText: 'Nombre',
-          ),
-        ),
+            content: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  TextField(
+                    controller: controller,
+                    decoration: const InputDecoration(
+                      hintText: 'Nombre',
+                    ),
+                  ),
+                  CheckboxListTile(
+                    contentPadding: EdgeInsets.zero,
+                    title: const Row(
+                      children: [
+                        Icon(Icons.visibility, size: 20),
+                        SizedBox(width: 8),
+                        Text('Vigilancia'),
+                      ],
+                    ),
+                    value: canVigilance,
+                    onChanged: (value) {
+                      setDialogState(() {
+                        canVigilance = value!;
+                      });
+                    },
+                  ),
+                  CheckboxListTile(
+                    contentPadding: EdgeInsets.zero,
+                    title: const Row(
+                      children: [
+                        Icon(Icons.mic, size: 20),
+                        SizedBox(width: 8),
+                        Text('Micrófono'),
+                      ],
+                    ),
+                    value: canMicrophone,
+                    onChanged: (value) {
+                      setDialogState(() {
+                        canMicrophone = value!;
+                      });
+                    },
+                  ),
+                  CheckboxListTile(
+                    contentPadding: EdgeInsets.zero,
+                    title: const Row(
+                      children: [
+                        Icon(Icons.chair_alt, size: 20),
+                        SizedBox(width: 8),
+                        Text('Acomodación'),
+                      ],
+                    ),
+                    value: canAccommodation,
+                    onChanged: (value) {
+                      setDialogState(() {
+                        canAccommodation = value!;
+                      });
+                    },
+                  ),
+                  CheckboxListTile(
+                    contentPadding: EdgeInsets.zero,
+                    title: const Row(
+                      children: [
+                        Icon(Icons.cleaning_services, size: 20),
+                        SizedBox(width: 8),
+                        Text('Aseo'),
+                      ],
+                    ),
+                    value: canCleaning,
+                    onChanged: (value) {
+                      setDialogState(() {
+                        canCleaning = value!;
+                      });
+                    },
+                  ),
+
+                  CheckboxListTile(
+                    contentPadding: EdgeInsets.zero,
+                    title: const Row(
+                      children: [
+                        Icon(Icons.menu_book, size: 20),
+                        SizedBox(width: 8),
+                        Text('Biblias'),
+                      ],
+                    ),
+                    value: canBookTable,
+                    onChanged: (value) {
+                      setDialogState(() {
+                        canBookTable = value!;
+                      });
+                    },
+                  ),
+
+                  CheckboxListTile(
+                    contentPadding: EdgeInsets.zero,
+                    title: const Row(
+                      children: [
+                        Icon(Icons.cast_connected, size: 20),
+                        SizedBox(width: 8),
+                        Text('Audiovisuales'),
+                      ],
+                    ),
+                    value: canAudiovisuals,
+                    onChanged: (value) {
+                      setDialogState(() {
+                        canAudiovisuals = value!;
+                      });
+                    },
+                  ),
+                  CheckboxListTile(
+                    contentPadding: EdgeInsets.zero,
+                    title: const Row(
+                      children: [
+                        Icon(Icons.workspace_premium, size: 20),
+                        SizedBox(width: 8),
+                        Text('Pastor'),
+                      ],
+                    ),
+                    value: firstVigilanceOnly,
+                    onChanged: (value) {
+                      setDialogState(() {
+                        firstVigilanceOnly = value!;
+                      });
+                    },
+                  ),
+                ],
+              ),
+            ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
@@ -151,7 +434,15 @@ class _VolunteersScreenState extends State<VolunteersScreen> {
                     id: volunteer.id,
                     name: controller.text.trim(),
                     isActive: volunteer.isActive,
+                    canVigilance: canVigilance,
+                    canMicrophone: canMicrophone,
+                    canAccommodation: canAccommodation,
+                    firstVigilanceOnly: firstVigilanceOnly,
+                    canCleaning: canCleaning,
+                    canBookTable: canBookTable,
+                    canAudiovisuals: canAudiovisuals,
                   );
+                  sortVolunteers();
                 });
 
                 saveVolunteers();
@@ -162,7 +453,9 @@ class _VolunteersScreenState extends State<VolunteersScreen> {
           ),
         ],
       ),
+        ),
     );
+    sortVolunteers();
   }
   Future<void> toggleVolunteerStatus(int index) async {
     final volunteer = volunteers[index];
@@ -222,7 +515,7 @@ class _VolunteersScreenState extends State<VolunteersScreen> {
         isActive: !volunteer.isActive,
       );
     });
-
+    sortVolunteers();
     saveVolunteers();
   }
   @override
@@ -230,6 +523,25 @@ class _VolunteersScreenState extends State<VolunteersScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Voluntarios'),
+        actions: [
+          IconButton(
+            icon: Icon(
+              ascendingOrder
+                  ? Icons.sort_by_alpha
+                  : Icons.sort,
+            ),
+            tooltip: ascendingOrder
+                ? 'Orden A → Z'
+                : 'Orden Z → A',
+            onPressed: () {
+              setState(() {
+                ascendingOrder = !ascendingOrder;
+
+                sortVolunteers();
+                });
+            },
+          ),
+        ],
       ),
       body: ListView.builder(
         itemCount: volunteers.length,
@@ -250,9 +562,79 @@ class _VolunteersScreenState extends State<VolunteersScreen> {
                     : Colors.grey,
               ),
             ),
-            subtitle: volunteer.isActive
-                ? null
-                : const Text('Inactivo'),
+            subtitle: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                if (!volunteer.isActive)
+                  const Text(
+                    'Inactivo',
+                    style: TextStyle(color: Colors.grey),
+                  ),
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 4,
+                  children: [
+                    if (volunteer.canVigilance ||
+                        volunteer.firstVigilanceOnly)
+                      const Tooltip(
+                        message: 'Puede hacer vigilancia',
+                        child: Icon(
+                          Icons.visibility,
+                          size: 18,
+                        ),
+                      ),
+                    if (volunteer.canMicrophone)
+                      const Tooltip(
+                        message: 'Puede hacer micrófono',
+                        child: Icon(
+                          Icons.mic,
+                          size: 18,
+                        ),
+                      ),
+                    if (volunteer.canAccommodation)
+                      const Tooltip(
+                        message: 'Puede hacer acomodación',
+                        child: Icon(
+                          Icons.event_seat,
+                          size: 18,
+                        ),
+                      ),
+                    if (volunteer.firstVigilanceOnly)
+                      const Tooltip(
+                        message: 'Solo primer turno de vigilancia',
+                        child: Icon(
+                          Icons.filter_1,
+                          size: 18,
+                        ),
+                      ),
+                    if (volunteer.canCleaning)
+                      const Tooltip(
+                        message: 'Puede hacer aseo',
+                        child: Icon(
+                          Icons.cleaning_services,
+                          size: 18,
+                        ),
+                      ),
+                    if (volunteer.canBookTable)
+                      const Tooltip(
+                        message: 'Puede atender la mesa de Biblias',
+                        child: Icon(
+                          Icons.menu_book,
+                          size: 18,
+                        ),
+                      ),
+                    if (volunteer.canAudiovisuals)
+                      const Tooltip(
+                        message: 'Puede hacer audiovisuales',
+                        child: Icon(
+                          Icons.cast_connected,
+                          size: 18,
+                        ),
+                      ),
+                  ],
+                ),
+              ],
+            ),
             onTap: () => editVolunteer(index),
             trailing: Row(
               mainAxisSize: MainAxisSize.min,

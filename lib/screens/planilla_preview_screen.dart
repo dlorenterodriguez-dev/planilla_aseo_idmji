@@ -8,6 +8,9 @@ import 'package:flutter/rendering.dart';
 import 'dart:io';
 import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
+import '../services/week_service.dart';
+import 'package:intl/intl.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 
 class PlanillaPreviewScreen extends StatefulWidget {
   const PlanillaPreviewScreen({super.key});
@@ -21,6 +24,10 @@ class _PlanillaPreviewScreenState
     extends State<PlanillaPreviewScreen> {
       final GlobalKey planillaKey = GlobalKey();
       Map<String, String> volunteerMap = {};
+      DateTime? weekStart;
+      DateTime get martes => weekStart!.add(const Duration(days: 1));
+      DateTime get sabado => weekStart!.add(const Duration(days: 5));
+      DateTime get domingo => weekStart!.add(const Duration(days: 6));
 
   String volunteerName(String id) {
     return volunteerMap[id] ?? id;
@@ -31,6 +38,7 @@ class _PlanillaPreviewScreenState
   List<String> ensenanzaIds = [];
 
   Future<void> _loadData() async {
+    final loadedWeekStart = await WeekService.loadWeekStart();
     final List<Volunteer> volunteers =
     await VolunteerStorageService.loadVolunteers();
 
@@ -47,6 +55,8 @@ class _PlanillaPreviewScreenState
     );
 
     setState(() {
+      weekStart = loadedWeekStart;
+
       volunteerMap = {
         for (final volunteer in volunteers)
           volunteer.id: volunteer.name,
@@ -74,8 +84,12 @@ class _PlanillaPreviewScreenState
         final directory =
         await getTemporaryDirectory();
 
+        final nombreArchivo = weekStart == null
+            ? 'planilla.png'
+            : 'planilla_${DateFormat('yyyy-MM-dd').format(weekStart!)}.png';
+
         final file = File(
-          '${directory.path}/planilla.png',
+          '${directory.path}/$nombreArchivo',
         );
 
         await file.writeAsBytes(pngBytes);
@@ -97,10 +111,10 @@ class _PlanillaPreviewScreenState
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Vista previa'),
+        title: const Text('Compartir planilla'),
         actions: [
           IconButton(
-            icon: const Icon(Icons.image),
+            icon: const Icon(Icons.share),
             onPressed: capturarPlanilla,
           ),
         ],
@@ -117,32 +131,44 @@ class _PlanillaPreviewScreenState
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 const SizedBox(height: 20),
-                FlutterLogo(size: 60),
-                SizedBox(height: 16),
+                SvgPicture.asset(
+                  'assets/images/logo_idmji.svg',
+                  height:80,
+                ),
+                SizedBox(height: 8),
                 Text(
                   'Vigilancia y Acomodación',
                   textAlign: TextAlign.center,
-                  style: TextStyle(
-                    fontSize: 24,
-                    fontWeight: FontWeight.bold,
+                  style: const TextStyle(
+                    fontSize: 28,
+                    fontWeight: FontWeight.w700,
+                    letterSpacing: 0.3,
                   ),
                 ),
 
                 SizedBox(height: 8),
 
                 Text(
-                  'Junio 2026',
+                  weekStart == null
+                      ? ''
+                      : '${weekStart!.day} al '
+                      '${weekStart!.add(const Duration(days: 6)).day} de '
+                      '${DateFormat.MMMM('es_ES').format(weekStart!)}',
                   textAlign: TextAlign.center,
-                  style: TextStyle(
+                  style: const TextStyle(
                     fontSize: 18,
+                    fontWeight: FontWeight.w600,
                   ),
                 ),
 
                 SizedBox(height: 24),
 
                 _ServiceBlock(
-                  title: 'Mar 2',
+                  title: weekStart == null
+                      ? ''
+                      : 'Martes ${martes.day}',
                   subtitle: 'ALABANZA',
+                  noHayCulto: alabanzaIds.every((id) => id.isEmpty),
                   rows: [
                     [
                       'Vigilancia (18 a 19h):',
@@ -168,8 +194,11 @@ class _PlanillaPreviewScreenState
                 SizedBox(height: 24),
 
                 _ServiceBlock(
-                  title: 'Sáb 6',
+                  title: weekStart == null
+                      ? ''
+                      : 'Sábado ${sabado.day}',
                   subtitle: 'ESTUDIO',
+                  noHayCulto: estudioIds.every((id) => id.isEmpty),
                   rows: [
                     [
                       'Vigilancia (16 a 17h):',
@@ -194,8 +223,11 @@ class _PlanillaPreviewScreenState
                 const SizedBox(height: 24),
 
                 _ServiceBlock(
-                  title: 'Dom 7',
+                  title: weekStart == null
+                      ? ''
+                      : 'Domingo ${domingo.day}',
                   subtitle: 'ENSEÑANZA',
+                  noHayCulto: ensenanzaIds.every((id) => id.isEmpty),
                   rows: [
                     [
                       'Vigilancia (16 a 17h):',
@@ -249,11 +281,13 @@ class _ServiceBlock extends StatelessWidget {
   final String title;
   final String subtitle;
   final List<List<String>> rows;
+  final bool noHayCulto;
 
   const _ServiceBlock({
     required this.title,
     required this.subtitle,
     required this.rows,
+    this.noHayCulto = false,
   });
 
   @override
@@ -275,22 +309,50 @@ class _ServiceBlock extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 8),
-        ...rows.map(
-              (row) => Container(
-            padding: const EdgeInsets.symmetric(
-              horizontal: 8,
-              vertical: 4,
-            ),
-            color: const Color(0xFFECECEC),
-            margin: const EdgeInsets.only(bottom: 2),
-            child: Row(
-              children: [
-                Expanded(child: Text(row[0])),
-                Text(row[1]),
-              ],
-            ),
-          ),
+
+        // Línea dorada siempre visible
+        Container(
+          height: 3,
+          color: const Color(0xFFD4AF37),
         ),
+
+        if (noHayCulto)
+          const Padding(
+            padding: EdgeInsets.symmetric(vertical: 12),
+            child: Text(
+              'No hay culto',
+              style: TextStyle(
+                fontWeight: FontWeight.bold,
+                fontSize: 16,
+              ),
+            ),
+          )
+        else
+          ...List.generate(rows.length, (index) {
+            final row = rows[index];
+
+            return Container(
+              color: index.isOdd
+                  ? const Color(0xFFEAF4FF) // azul muy suave
+                  : Colors.white,
+              padding: const EdgeInsets.symmetric(
+                horizontal: 12,
+                vertical: 10,
+              ),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Text(row[0]),
+                  ),
+                  Text(
+                    row[1],
+                    textAlign: TextAlign.right,
+                  ),
+                ],
+              ),
+            );
+          }),
+        const SizedBox(height: 24),
       ],
     );
   }

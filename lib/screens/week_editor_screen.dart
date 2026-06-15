@@ -6,8 +6,10 @@ import '../models/volunteer.dart';
 import '../models/event_templates.dart';
 import '../services/volunteer_storage_service.dart';
 import '../services/assignment_storage_service.dart';
+import '../services/week_service.dart';
 
 class WeekEditorScreen extends StatefulWidget {
+
   const WeekEditorScreen({super.key});
 
   @override
@@ -15,13 +17,66 @@ class WeekEditorScreen extends StatefulWidget {
 }
 
 class _WeekEditorScreenState extends State<WeekEditorScreen> {
+
+  void autoAssign() {
+    final total =
+        alabanza.length +
+            estudio.length +
+            ensenanza.length;
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          'Autoasignación en desarrollo. Total de puestos: $total',
+        ),
+      ),
+    );
+  }
+
+  DateTime? weekStart;
+  DateTime get martes => weekStart!.add(const Duration(days: 1));
+  DateTime get sabado => weekStart!.add(const Duration(days: 5));
+  DateTime get domingo => weekStart!.add(const Duration(days: 6));
+
   List<Volunteer> volunteers = [];
   List<Volunteer> availableVolunteersFor(
       Assignment assignment,
       ) {
     return volunteers.where((volunteer) {
-      return volunteer.isActive ||
-          volunteer.id == assignment.volunteerId;
+      // Permitir siempre el voluntario ya asignado
+      if (volunteer.id == assignment.volunteerId) {
+        return true;
+      }
+
+      // Debe estar activo
+      if (!volunteer.isActive) {
+        return false;
+      }
+
+      // Filtrar por tipo de puesto
+      if (assignment.role == 'Micrófono') {
+        return volunteer.canMicrophone;
+      }
+
+      if (assignment.role.contains('Acomodación')) {
+        return volunteer.canAccommodation;
+      }
+
+      // Si no puede hacer vigilancia y tampoco está marcado
+// como "solo primer turno", no es válido.
+      if (!volunteer.canVigilance &&
+          !volunteer.firstVigilanceOnly) {
+        return false;
+      }
+
+// Si solo puede hacer el primer turno, excluirlo del resto.
+      if (volunteer.firstVigilanceOnly &&
+          assignment.startTime != '18:00' &&
+          assignment.startTime != '16:00') {
+        return false;
+      }
+
+      return true;
     }).toList();
   }
 
@@ -38,13 +93,30 @@ class _WeekEditorScreenState extends State<WeekEditorScreen> {
   void initState() {
     super.initState();
 
+    loadWeek();
+
     loadVolunteers().then((_) {
       loadAssignments();
     });
   }
+
+  Future<void> loadWeek() async {
+    final date = await WeekService.loadWeekStart();
+
+    setState(() {
+      weekStart = date;
+    });
+  }
+
   Future<void> loadVolunteers() async {
     final savedVolunteers =
-        await VolunteerStorageService.loadVolunteers();
+    await VolunteerStorageService.loadVolunteers();
+
+    savedVolunteers.sort(
+          (a, b) => a.name.toLowerCase().compareTo(
+        b.name.toLowerCase(),
+      ),
+    );
 
     setState(() {
       volunteers = savedVolunteers;
@@ -207,17 +279,7 @@ class _WeekEditorScreenState extends State<WeekEditorScreen> {
   }
 
   String? dropdownValueFor(Assignment assignment) {
-    final volunteerId = assignment.volunteerId;
-
-    if (volunteerId == null) {
-      return null;
-    }
-
-    final exists = volunteers.any(
-      (volunteer) => volunteer.id == volunteerId,
-    );
-
-    return exists ? volunteerId : null;
+    return assignment.volunteerId ?? '';
   }
 
   @override
@@ -226,6 +288,13 @@ class _WeekEditorScreenState extends State<WeekEditorScreen> {
       appBar: AppBar(
         title: const Text('Editar semana'),
         actions: [
+          IconButton(
+            icon: const Icon(Icons.auto_fix_high),
+            tooltip: 'Autoasignar',
+            onPressed: () {
+              autoAssign();
+            },
+          ),
           IconButton(
             icon: const Icon(Icons.delete),
             onPressed: () async {
@@ -272,11 +341,57 @@ class _WeekEditorScreenState extends State<WeekEditorScreen> {
         ],
       ),
       body: ListView(
+
         padding: const EdgeInsets.all(16),
         children: [
-          const Text(
-            'Martes - Alabanza',
-            style: TextStyle(
+
+          if (weekStart != null) ...[
+            Text(
+              'Semana: '
+                  '${weekStart!.day.toString().padLeft(2, '0')}/'
+                  '${weekStart!.month.toString().padLeft(2, '0')}/'
+                  '${weekStart!.year}'
+                  ' - '
+                  '${weekStart!.add(const Duration(days: 6)).day.toString().padLeft(2, '0')}/'
+                  '${weekStart!.add(const Duration(days: 6)).month.toString().padLeft(2, '0')}/'
+                  '${weekStart!.add(const Duration(days: 6)).year}',
+              style: const TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const SizedBox(height: 16),
+
+            TextButton.icon(
+              onPressed: () async {
+                final selected = await showDatePicker(
+                  context: context,
+                  initialDate: weekStart ?? DateTime.now(),
+                  firstDate: DateTime(2020),
+                  lastDate: DateTime(2100),
+                );
+
+                if (selected != null) {
+                  final monday = selected.subtract(
+                    Duration(days: selected.weekday - 1),
+                  );
+
+                  await WeekService.saveWeekStart(monday);
+
+                  setState(() {
+                    weekStart = monday;
+                  });
+                }
+              },
+              icon: const Icon(Icons.calendar_month),
+              label: const Text('Cambiar semana'),
+            ),
+
+          ],
+
+          Text(
+            'Martes ${martes.day} - Alabanza',
+            style: const TextStyle(
               fontSize: 20,
               fontWeight: FontWeight.bold,
             ),
@@ -296,14 +411,34 @@ class _WeekEditorScreenState extends State<WeekEditorScreen> {
                   '${assignment.role} (${assignment.startTime}-${assignment.endTime})',
                   border: const OutlineInputBorder(),
                 ),
-                  items: availableVolunteersFor(assignment,).map((volunteer)  {
-                  return DropdownMenuItem(
-                    value: volunteer.id,
-                    child: Text(volunteer.name),
-                  );
-                }).toList(),
+                items: [
+                  const DropdownMenuItem<String>(
+                    value: '',
+                    child: Text('— Sin asignar —'),
+                  ),
+                  ...availableVolunteersFor(assignment).map((volunteer) {
+                    return DropdownMenuItem<String>(
+                      value: volunteer.id,
+                      child: Text(volunteer.name),
+                    );
+                  }),
+                ],
                 onChanged: (value) {
                   if (value == null) return;
+
+                  if (value.isEmpty) {
+                    setState(() {
+                      assignment.volunteerId = null;
+                    });
+
+                    AssignmentStorageService.saveAssignments(
+                      alabanza: alabanza,
+                      estudio: estudio,
+                      ensenanza: ensenanza,
+                    );
+
+                    return;
+                  }
 
                   final hasConflict =
                   ConflictService.hasConflict(
@@ -340,10 +475,9 @@ class _WeekEditorScreenState extends State<WeekEditorScreen> {
 
           const SizedBox(height: 32),
           const SizedBox(height: 32),
-
-          const Text(
-            'Sábado - Estudio',
-            style: TextStyle(
+          Text(
+            'Sábado ${sabado.day} - Estudio',
+            style: const TextStyle(
               fontSize: 20,
               fontWeight: FontWeight.bold,
             ),
@@ -363,16 +497,34 @@ class _WeekEditorScreenState extends State<WeekEditorScreen> {
                   '${assignment.role} (${assignment.startTime}-${assignment.endTime})',
                   border: const OutlineInputBorder(),
                 ),
-                items: availableVolunteersFor(
-                  assignment,
-                ).map((volunteer) {
-                  return DropdownMenuItem(
-                    value: volunteer.id,
-                    child: Text(volunteer.name),
-                  );
-                }).toList(),
+                items: [
+                  const DropdownMenuItem<String>(
+                    value: '',
+                    child: Text('— Sin asignar —'),
+                  ),
+                  ...availableVolunteersFor(assignment).map((volunteer) {
+                    return DropdownMenuItem<String>(
+                      value: volunteer.id,
+                      child: Text(volunteer.name),
+                    );
+                  }),
+                ],
                 onChanged: (value) {
                   if (value == null) return;
+
+                  if (value.isEmpty) {
+                    setState(() {
+                      assignment.volunteerId = null;
+                    });
+
+                    AssignmentStorageService.saveAssignments(
+                      alabanza: alabanza,
+                      estudio: estudio,
+                      ensenanza: ensenanza,
+                    );
+
+                    return;
+                  }
 
                   final hasConflict =
                   ConflictService.hasConflict(
@@ -406,9 +558,9 @@ class _WeekEditorScreenState extends State<WeekEditorScreen> {
               ),
             ),
           ),
-          const Text(
-            'Domingo - Enseñanza',
-            style: TextStyle(
+          Text(
+            'Domingo ${domingo.day} - Enseñanza',
+            style: const TextStyle(
               fontSize: 20,
               fontWeight: FontWeight.bold,
             ),
@@ -428,16 +580,34 @@ class _WeekEditorScreenState extends State<WeekEditorScreen> {
                   '${assignment.role} (${assignment.startTime}-${assignment.endTime})',
                   border: const OutlineInputBorder(),
                 ),
-                items: availableVolunteersFor(
-                  assignment,
-                ).map((volunteer) {
-                  return DropdownMenuItem(
-                    value: volunteer.id,
-                    child: Text(volunteer.name),
-                  );
-                }).toList(),
+                items: [
+                  const DropdownMenuItem<String>(
+                    value: '',
+                    child: Text('— Sin asignar —'),
+                  ),
+                  ...availableVolunteersFor(assignment).map((volunteer) {
+                    return DropdownMenuItem<String>(
+                      value: volunteer.id,
+                      child: Text(volunteer.name),
+                    );
+                  }),
+                ],
                 onChanged: (value) {
                   if (value == null) return;
+
+                  if (value.isEmpty) {
+                    setState(() {
+                      assignment.volunteerId = null;
+                    });
+
+                    AssignmentStorageService.saveAssignments(
+                      alabanza: alabanza,
+                      estudio: estudio,
+                      ensenanza: ensenanza,
+                    );
+
+                    return;
+                  }
 
                   final hasConflict =
                   ConflictService.hasConflict(
