@@ -595,7 +595,7 @@ class _VolunteersScreenState extends State<VolunteersScreen> {
                       const Tooltip(
                         message: 'Puede hacer acomodación',
                         child: Icon(
-                          Icons.event_seat,
+                          Icons.chair_alt,
                           size: 18,
                         ),
                       ),
@@ -603,7 +603,7 @@ class _VolunteersScreenState extends State<VolunteersScreen> {
                       const Tooltip(
                         message: 'Solo primer turno de vigilancia',
                         child: Icon(
-                          Icons.filter_1,
+                          Icons.workspace_premium,
                           size: 18,
                         ),
                       ),
