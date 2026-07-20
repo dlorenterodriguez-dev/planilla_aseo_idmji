@@ -7,6 +7,7 @@ import '../models/event_templates.dart';
 import '../services/volunteer_storage_service.dart';
 import '../services/assignment_storage_service.dart';
 import '../services/week_service.dart';
+import '../models/service_types.dart';
 
 class WeekEditorScreen extends StatefulWidget {
 
@@ -42,41 +43,74 @@ class _WeekEditorScreenState extends State<WeekEditorScreen> {
   List<Volunteer> availableVolunteersFor(
       Assignment assignment,
       ) {
+    // Localizar dinámicamente el primer turno de vigilancia del mismo culto.
+    final List<Assignment> currentService;
+    if (alabanza.contains(assignment)) {
+      currentService = alabanza;
+    } else if (estudio.contains(assignment)) {
+      currentService = estudio;
+    } else {
+      currentService = ensenanza;
+    }
+
+    final serviceType = ServiceTypes.fromRole(assignment.role);
+    final vigilanceAssignments = currentService
+        .where(
+          (currentAssignment) =>
+              ServiceTypes.fromRole(currentAssignment.role) ==
+              ServiceTypes.vigilance,
+        )
+        .toList()
+      ..sort((a, b) => a.startTime.compareTo(b.startTime));
+
+    final vigilanceTurnIndex = vigilanceAssignments.indexWhere(
+      (currentAssignment) => identical(currentAssignment, assignment),
+    );
+
     return volunteers.where((volunteer) {
-      // Permitir siempre el voluntario ya asignado
+      // Mantener visible el voluntario ya asignado para no romper
+      // la edición manual.
       if (volunteer.id == assignment.volunteerId) {
         return true;
       }
 
-      // Debe estar activo
       if (!volunteer.isActive) {
         return false;
       }
 
-      // Filtrar por tipo de puesto
-      if (assignment.role == 'Micrófono') {
-        return volunteer.canMicrophone;
+      bool allowed = false;
+
+      if (serviceType == ServiceTypes.vigilance) {
+        allowed = true;
+      } else if (serviceType == ServiceTypes.microphone) {
+        allowed = volunteer.canMicrophone;
+      } else if (serviceType == ServiceTypes.accommodation) {
+        allowed = volunteer.canAccommodation;
+      } else if (serviceType == ServiceTypes.cleaning) {
+        allowed = volunteer.canCleaning;
+      } else if (serviceType == ServiceTypes.bookTable) {
+        allowed = volunteer.canBookTable;
+      } else if (serviceType == ServiceTypes.audiovisuals) {
+        allowed = volunteer.canAudiovisuals;
       }
 
-      if (assignment.role.contains('Acomodación')) {
-        return volunteer.canAccommodation;
-      }
-
-      // Si no puede hacer vigilancia y tampoco está marcado
-// como "solo primer turno", no es válido.
-      if (!volunteer.canVigilance &&
-          !volunteer.firstVigilanceOnly) {
+      if (!allowed) {
         return false;
       }
 
-// Si solo puede hacer el primer turno, excluirlo del resto.
-      if (volunteer.firstVigilanceOnly &&
-          assignment.startTime != '18:00' &&
-          assignment.startTime != '16:00') {
-        return false;
+      if (serviceType != ServiceTypes.vigilance) {
+        return true;
       }
 
-      return true;
+      if (vigilanceTurnIndex == 0) {
+        return volunteer.canFirstVigilance;
+      }
+
+      if (vigilanceTurnIndex == vigilanceAssignments.length - 1) {
+        return volunteer.canLastVigilance;
+      }
+
+      return volunteer.canMiddleVigilance;
     }).toList();
   }
 

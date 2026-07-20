@@ -3,10 +3,11 @@ class Volunteer {
   final String name;
   final bool isActive;
 
-  final bool canVigilance;
   final bool canMicrophone;
   final bool canAccommodation;
-  final bool firstVigilanceOnly;
+  final bool canFirstVigilance;
+  final bool canMiddleVigilance;
+  final bool canLastVigilance;
   final bool canCleaning;
   final bool canBookTable;
   final bool canAudiovisuals;
@@ -15,10 +16,11 @@ class Volunteer {
     required this.id,
     required this.name,
     required this.isActive,
-    this.canVigilance = false,
     this.canMicrophone = false,
     this.canAccommodation = false,
-    this.firstVigilanceOnly = false,
+    this.canFirstVigilance = true,
+    this.canMiddleVigilance = true,
+    this.canLastVigilance = true,
     this.canCleaning = false,
     this.canBookTable = false,
     this.canAudiovisuals = false,
@@ -29,14 +31,14 @@ class Volunteer {
       'id': id,
       'name': name,
       'isActive': isActive,
-      'canVigilance': canVigilance,
       'canMicrophone': canMicrophone,
       'canAccommodation': canAccommodation,
-      'firstVigilanceOnly': firstVigilanceOnly,
+      'canFirstVigilance': canFirstVigilance,
+      'canMiddleVigilance': canMiddleVigilance,
+      'canLastVigilance': canLastVigilance,
       'canCleaning': canCleaning,
       'canBookTable': canBookTable,
       'canAudiovisuals': canAudiovisuals,
-
     };
   }
 
@@ -45,11 +47,11 @@ class Volunteer {
       id: json['id'] as String,
       name: json['name'] as String,
       isActive: json['isActive'] as bool? ?? false,
-      canVigilance: json['canVigilance'] as bool? ?? false,
       canMicrophone: json['canMicrophone'] as bool? ?? false,
       canAccommodation: json['canAccommodation'] as bool? ?? false,
-      firstVigilanceOnly:
-      json['firstVigilanceOnly'] as bool? ?? false,
+      canFirstVigilance: json['canFirstVigilance'] as bool? ?? true,
+      canMiddleVigilance: json['canMiddleVigilance'] as bool? ?? true,
+      canLastVigilance: json['canLastVigilance'] as bool? ?? true,
       canCleaning: json['canCleaning'] as bool? ?? false,
       canBookTable: json['canBookTable'] as bool? ?? false,
       canAudiovisuals: json['canAudiovisuals'] as bool? ?? false,

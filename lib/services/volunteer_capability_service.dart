@@ -12,7 +12,9 @@ class VolunteerCapabilityService {
 
     switch (serviceType) {
       case ServiceTypes.vigilance:
-        return volunteer.canVigilance;
+        return volunteer.canFirstVigilance ||
+            volunteer.canMiddleVigilance ||
+            volunteer.canLastVigilance;
 
       case ServiceTypes.microphone:
         return volunteer.canMicrophone;
