@@ -254,13 +254,13 @@ class _PlanillaPreviewScreenState
                           : '',
                     ],
                     [
-                      'Acomodación pasillo 1:',
+                      'Acomodación 1 (17:00 a 17:30):',
                       ensenanzaIds.length > 4
                           ? volunteerName(ensenanzaIds[4])
                           : '',
                     ],
                     [
-                      'Acomodación pasillo 2:',
+                      'Acomodación 2 (17:00 a 17:30):',
                       ensenanzaIds.length > 5
                           ? volunteerName(ensenanzaIds[5])
                           : '',
