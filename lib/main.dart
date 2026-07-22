@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'screens/volunteers_screen.dart';
 import 'screens/week_editor_screen.dart';
 import 'screens/planilla_preview_screen.dart';
+import 'screens/service_history_screen.dart';
+import 'screens/backup_screen.dart';
 import 'services/service_history_service.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 
@@ -134,6 +136,40 @@ class HomePage extends StatelessWidget {
                   );
                 },
                 child: const Text('Generar planilla'),
+              ),
+            ),
+            const SizedBox(height: 24),
+            const Divider(),
+            const SizedBox(height: 12),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton.icon(
+                icon: const Icon(Icons.history),
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => const ServiceHistoryScreen(),
+                    ),
+                  );
+                },
+                label: const Text('Consultar histórico'),
+              ),
+            ),
+            const SizedBox(height: 12),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton.icon(
+                icon: const Icon(Icons.settings_backup_restore),
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => const BackupScreen(),
+                    ),
+                  );
+                },
+                label: const Text('Copias de seguridad'),
               ),
             ),
           ],
