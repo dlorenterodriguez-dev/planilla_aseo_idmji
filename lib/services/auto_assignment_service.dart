@@ -8,6 +8,7 @@ class AutoAssignmentService {
     required List<Assignment> assignments,
     required List<Volunteer> volunteers,
     required bool isAlabanza,
+    required Map<String, int> weeklyAssignmentCounts,
   }) async {
     final pendingAssignments = assignments.where(_isUnassigned).toList();
 
@@ -37,21 +38,12 @@ class AutoAssignmentService {
     }
 
     for (final assignment in pendingAssignments) {
-      final serviceType = ServiceTypes.fromRole(assignment.role);
       final candidates = _eligibleCandidates(
         assignment: assignment,
         volunteers: volunteers,
         vigilanceAssignments: vigilanceAssignments,
         isAlabanza: isAlabanza,
       );
-      candidates.sort(
-        (a, b) => _compareByHistoricalLoad(
-          a,
-          b,
-          historicalCountsByServiceType[serviceType]!,
-        ),
-      );
-
       candidateLists.add(candidates);
       candidateCounts.add(candidates.length);
     }
@@ -93,6 +85,8 @@ class AutoAssignmentService {
         continue;
       }
 
+      final serviceType = ServiceTypes.fromRole(assignment.role);
+
       final occupiedVolunteerIds = <String>{};
       for (final existing in assignments) {
         final id = existing.volunteerId;
@@ -101,16 +95,28 @@ class AutoAssignmentService {
         }
       }
 
-      Volunteer? selected;
-      for (final candidate in candidates) {
-        if (!occupiedVolunteerIds.contains(candidate.id)) {
-          selected = candidate;
-          break;
-        }
-      }
+      final availableCandidates = candidates
+          .where((candidate) => !occupiedVolunteerIds.contains(candidate.id))
+          .toList();
+      final selectionPool = availableCandidates.isEmpty
+          ? List<Volunteer>.of(candidates)
+          : availableCandidates;
+      selectionPool.sort(
+        (a, b) => _compareCandidates(
+          a,
+          b,
+          weeklyAssignmentCounts,
+          historicalCountsByServiceType[serviceType]!,
+        ),
+      );
 
-      selected ??= candidates.first;
+      final selected = selectionPool.first;
       assignment.volunteerId = selected.id;
+      weeklyAssignmentCounts.update(
+        selected.id,
+        (count) => count + 1,
+        ifAbsent: () => 1,
+      );
     }
   }
 
@@ -119,11 +125,19 @@ class AutoAssignmentService {
     return id == null || id.isEmpty;
   }
 
-  static int _compareByHistoricalLoad(
+  static int _compareCandidates(
     Volunteer a,
     Volunteer b,
+    Map<String, int> weeklyAssignmentCounts,
     Map<String, int> historicalCounts,
   ) {
+    final weeklyLoadCompare = (weeklyAssignmentCounts[a.id] ?? 0).compareTo(
+      weeklyAssignmentCounts[b.id] ?? 0,
+    );
+    if (weeklyLoadCompare != 0) {
+      return weeklyLoadCompare;
+    }
+
     final loadCompare = (historicalCounts[a.id] ?? 0).compareTo(
       historicalCounts[b.id] ?? 0,
     );

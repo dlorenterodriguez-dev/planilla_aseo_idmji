@@ -1,4 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:planilla_idmji/models/assignment.dart';
 import 'package:planilla_idmji/models/event_templates.dart';
 import 'package:planilla_idmji/models/service_event.dart';
 import 'package:planilla_idmji/models/service_types.dart';
@@ -32,6 +33,7 @@ void main() {
       assignments: assignments,
       volunteers: volunteers,
       isAlabanza: true,
+      weeklyAssignmentCounts: {},
     );
 
     expect(
@@ -49,6 +51,7 @@ void main() {
       assignments: assignments,
       volunteers: volunteers,
       isAlabanza: true,
+      weeklyAssignmentCounts: {'volunteer-1': 1},
     );
 
     expect(
@@ -56,6 +59,58 @@ void main() {
       ['volunteer-1', 'volunteer-3', 'volunteer-2'],
     );
   });
+
+  test('shares weekly load across independent service calls', () async {
+    await ServiceEventStorageService.saveEvents([]);
+    final weeklyAssignmentCounts = <String, int>{};
+    final firstService = [_singleVigilance()];
+    final secondService = [_singleVigilance()];
+
+    await AutoAssignmentService.autoAssign(
+      assignments: firstService,
+      volunteers: volunteers,
+      isAlabanza: false,
+      weeklyAssignmentCounts: weeklyAssignmentCounts,
+    );
+    await AutoAssignmentService.autoAssign(
+      assignments: secondService,
+      volunteers: volunteers,
+      isAlabanza: false,
+      weeklyAssignmentCounts: weeklyAssignmentCounts,
+    );
+
+    expect(firstService.single.volunteerId, 'volunteer-1');
+    expect(secondService.single.volunteerId, 'volunteer-2');
+  });
+
+  test('allows weekly repetition when there is no eligible alternative',
+      () async {
+    await ServiceEventStorageService.saveEvents([]);
+    final weeklyAssignmentCounts = <String, int>{};
+    final firstService = [_singleVigilance()];
+    final secondService = [_singleVigilance()];
+
+    for (final assignments in [firstService, secondService]) {
+      await AutoAssignmentService.autoAssign(
+        assignments: assignments,
+        volunteers: [volunteers.first],
+        isAlabanza: false,
+        weeklyAssignmentCounts: weeklyAssignmentCounts,
+      );
+    }
+
+    expect(firstService.single.volunteerId, 'volunteer-1');
+    expect(secondService.single.volunteerId, 'volunteer-1');
+    expect(weeklyAssignmentCounts['volunteer-1'], 2);
+  });
+}
+
+Assignment _singleVigilance() {
+  return Assignment(
+    role: 'Vigilancia',
+    startTime: '18:00',
+    endTime: '19:00',
+  );
 }
 
 ServiceEvent _vigilanceEvent(String volunteerId, DateTime date) {

@@ -21,20 +21,25 @@ class WeekEditorScreen extends StatefulWidget {
 class _WeekEditorScreenState extends State<WeekEditorScreen> {
 
   Future<void> autoAssign() async {
+    final weeklyAssignmentCounts = _weeklyAssignmentCounts();
+
     await AutoAssignmentService.autoAssign(
       assignments: alabanza,
       volunteers: volunteers,
       isAlabanza: true,
+      weeklyAssignmentCounts: weeklyAssignmentCounts,
     );
     await AutoAssignmentService.autoAssign(
       assignments: estudio,
       volunteers: volunteers,
       isAlabanza: false,
+      weeklyAssignmentCounts: weeklyAssignmentCounts,
     );
     await AutoAssignmentService.autoAssign(
       assignments: ensenanza,
       volunteers: volunteers,
       isAlabanza: false,
+      weeklyAssignmentCounts: weeklyAssignmentCounts,
     );
 
     await AssignmentStorageService.saveAssignments(
@@ -49,6 +54,25 @@ class _WeekEditorScreenState extends State<WeekEditorScreen> {
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(content: Text('Autoasignación completada')),
     );
+  }
+
+  Map<String, int> _weeklyAssignmentCounts() {
+    final counts = <String, int>{};
+
+    for (final assignment in [...alabanza, ...estudio, ...ensenanza]) {
+      final volunteerId = assignment.volunteerId;
+      if (volunteerId == null || volunteerId.isEmpty) {
+        continue;
+      }
+
+      counts.update(
+        volunteerId,
+        (count) => count + 1,
+        ifAbsent: () => 1,
+      );
+    }
+
+    return counts;
   }
 
   DateTime? weekStart;
