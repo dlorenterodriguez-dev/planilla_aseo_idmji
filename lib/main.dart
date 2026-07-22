@@ -2,14 +2,59 @@ import 'package:flutter/material.dart';
 import 'screens/volunteers_screen.dart';
 import 'screens/week_editor_screen.dart';
 import 'screens/planilla_preview_screen.dart';
+import 'services/service_history_service.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 
 void main() {
   runApp(const PlanillaApp());
 }
 
-class PlanillaApp extends StatelessWidget {
+class PlanillaApp extends StatefulWidget {
   const PlanillaApp({super.key});
+
+  @override
+  State<PlanillaApp> createState() => _PlanillaAppState();
+}
+
+class _PlanillaAppState extends State<PlanillaApp>
+    with WidgetsBindingObserver {
+  var _isProcessingHistory = false;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+    _processCompletedServices();
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      _processCompletedServices();
+    }
+  }
+
+  Future<void> _processCompletedServices() async {
+    if (_isProcessingHistory) {
+      return;
+    }
+
+    _isProcessingHistory = true;
+    try {
+      await ServiceHistoryService.processCompletedServices();
+    } catch (error, stackTrace) {
+      debugPrint('No se pudo actualizar el histórico: $error');
+      debugPrintStack(stackTrace: stackTrace);
+    } finally {
+      _isProcessingHistory = false;
+    }
+  }
 
   @override
   Widget build(BuildContext context) {

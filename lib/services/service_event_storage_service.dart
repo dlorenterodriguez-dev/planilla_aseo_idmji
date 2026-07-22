@@ -14,30 +14,43 @@ class ServiceEventStorageService {
       return [];
     }
 
-    return stored
-        .map(
-          (e) => ServiceEvent.fromJson(
-        jsonDecode(e) as Map<String, dynamic>,
-      ),
-    )
-        .toList();
+    final events = <ServiceEvent>[];
+
+    for (final encodedEvent in stored) {
+      try {
+        final json = jsonDecode(encodedEvent) as Map<String, dynamic>;
+        events.add(ServiceEvent.fromJson(json));
+      } catch (_) {
+        // Un registro corrupto no debe impedir consultar el resto del histórico.
+      }
+    }
+
+    return events;
   }
 
   static Future<void> addEvent(ServiceEvent event) async {
+    await addEvents([event]);
+  }
+
+  static Future<void> addEvents(List<ServiceEvent> newEvents) async {
     final events = await loadEvents();
 
-    final alreadyExists = events.any(
-          (e) =>
-      e.eventId == event.eventId &&
-          e.volunteerId == event.volunteerId &&
-          e.serviceType == event.serviceType,
-    );
+    for (final event in newEvents) {
+      final alreadyExists = events.any(
+        (existing) =>
+            existing.eventId == event.eventId &&
+            existing.volunteerId == event.volunteerId &&
+            existing.serviceType == event.serviceType &&
+            existing.role == event.role &&
+            existing.startTime == event.startTime &&
+            existing.endTime == event.endTime,
+      );
 
-    if (alreadyExists) {
-      return;
+      if (!alreadyExists) {
+        events.add(event);
+      }
     }
 
-    events.add(event);
     await saveEvents(events);
   }
 

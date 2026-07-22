@@ -1,6 +1,7 @@
 import '../models/assignment.dart';
 import '../models/service_types.dart';
 import '../models/volunteer.dart';
+import 'service_history_query_service.dart';
 
 class AutoAssignmentService {
   static Future<void> autoAssign({
@@ -25,13 +26,30 @@ class AutoAssignmentService {
 
     final candidateCounts = <int>[];
     final candidateLists = <List<Volunteer>>[];
+    final historicalCountsByServiceType = <String, Map<String, int>>{};
 
     for (final assignment in pendingAssignments) {
+      final serviceType = ServiceTypes.fromRole(assignment.role);
+      historicalCountsByServiceType[serviceType] ??=
+          await ServiceHistoryQueryService.countAssignmentsByVolunteer(
+        serviceType: serviceType,
+      );
+    }
+
+    for (final assignment in pendingAssignments) {
+      final serviceType = ServiceTypes.fromRole(assignment.role);
       final candidates = _eligibleCandidates(
         assignment: assignment,
         volunteers: volunteers,
         vigilanceAssignments: vigilanceAssignments,
         isAlabanza: isAlabanza,
+      );
+      candidates.sort(
+        (a, b) => _compareByHistoricalLoad(
+          a,
+          b,
+          historicalCountsByServiceType[serviceType]!,
+        ),
       );
 
       candidateLists.add(candidates);
@@ -99,6 +117,26 @@ class AutoAssignmentService {
   static bool _isUnassigned(Assignment assignment) {
     final id = assignment.volunteerId;
     return id == null || id.isEmpty;
+  }
+
+  static int _compareByHistoricalLoad(
+    Volunteer a,
+    Volunteer b,
+    Map<String, int> historicalCounts,
+  ) {
+    final loadCompare = (historicalCounts[a.id] ?? 0).compareTo(
+      historicalCounts[b.id] ?? 0,
+    );
+    if (loadCompare != 0) {
+      return loadCompare;
+    }
+
+    final nameCompare = a.name.toLowerCase().compareTo(b.name.toLowerCase());
+    if (nameCompare != 0) {
+      return nameCompare;
+    }
+
+    return a.id.compareTo(b.id);
   }
 
   static List<Volunteer> _eligibleCandidates({
