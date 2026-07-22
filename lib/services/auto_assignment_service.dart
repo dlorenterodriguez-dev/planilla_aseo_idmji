@@ -6,6 +6,7 @@ class AutoAssignmentService {
   static Future<void> autoAssign({
     required List<Assignment> assignments,
     required List<Volunteer> volunteers,
+    required bool isAlabanza,
   }) async {
     final pendingAssignments = assignments.where(_isUnassigned).toList();
 
@@ -30,6 +31,7 @@ class AutoAssignmentService {
         assignment: assignment,
         volunteers: volunteers,
         vigilanceAssignments: vigilanceAssignments,
+        isAlabanza: isAlabanza,
       );
 
       candidateLists.add(candidates);
@@ -103,6 +105,7 @@ class AutoAssignmentService {
     required Assignment assignment,
     required List<Volunteer> volunteers,
     required List<Assignment> vigilanceAssignments,
+    required bool isAlabanza,
   }) {
     final serviceType = ServiceTypes.fromRole(assignment.role);
     final vigilanceTurnIndex = vigilanceAssignments.indexWhere(
@@ -125,6 +128,7 @@ class AutoAssignmentService {
             volunteer: volunteer,
             vigilanceTurnIndex: vigilanceTurnIndex,
             vigilanceTurnCount: vigilanceAssignments.length,
+            isAlabanza: isAlabanza,
           )) {
         candidates.add(volunteer);
       }
@@ -159,13 +163,24 @@ class AutoAssignmentService {
     required Volunteer volunteer,
     required int vigilanceTurnIndex,
     required int vigilanceTurnCount,
+    required bool isAlabanza,
   }) {
+    // En Alabanza, los voluntarios de Imposición no pueden
+    // realizar la última vigilancia.
+    if (isAlabanza &&
+        vigilanceTurnIndex == vigilanceTurnCount - 1 &&
+        volunteer.canImposition) {
+      return false;
+    }
+
     if (vigilanceTurnIndex == 0) {
       return volunteer.canFirstVigilance;
     }
+
     if (vigilanceTurnIndex == vigilanceTurnCount - 1) {
       return volunteer.canLastVigilance;
     }
+
     return volunteer.canMiddleVigilance;
   }
 }

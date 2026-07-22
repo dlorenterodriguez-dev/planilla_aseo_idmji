@@ -6,6 +6,7 @@ import '../models/volunteer.dart';
 import '../models/event_templates.dart';
 import '../services/volunteer_storage_service.dart';
 import '../services/assignment_storage_service.dart';
+import '../services/auto_assignment_service.dart';
 import '../services/week_service.dart';
 import '../models/service_types.dart';
 
@@ -19,18 +20,34 @@ class WeekEditorScreen extends StatefulWidget {
 
 class _WeekEditorScreenState extends State<WeekEditorScreen> {
 
-  void autoAssign() {
-    final total =
-        alabanza.length +
-            estudio.length +
-            ensenanza.length;
+  Future<void> autoAssign() async {
+    await AutoAssignmentService.autoAssign(
+      assignments: alabanza,
+      volunteers: volunteers,
+      isAlabanza: true,
+    );
+    await AutoAssignmentService.autoAssign(
+      assignments: estudio,
+      volunteers: volunteers,
+      isAlabanza: false,
+    );
+    await AutoAssignmentService.autoAssign(
+      assignments: ensenanza,
+      volunteers: volunteers,
+      isAlabanza: false,
+    );
 
+    await AssignmentStorageService.saveAssignments(
+      alabanza: alabanza,
+      estudio: estudio,
+      ensenanza: ensenanza,
+    );
+
+    if (!mounted) return;
+
+    setState(() {});
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(
-          'Autoasignación en desarrollo. Total de puestos: $total',
-        ),
-      ),
+      const SnackBar(content: Text('Autoasignación completada')),
     );
   }
 
@@ -66,6 +83,9 @@ class _WeekEditorScreenState extends State<WeekEditorScreen> {
     final vigilanceTurnIndex = vigilanceAssignments.indexWhere(
       (currentAssignment) => identical(currentAssignment, assignment),
     );
+    final isAlabanza = identical(currentService, alabanza);
+    final isLastVigilance =
+        vigilanceTurnIndex == vigilanceAssignments.length - 1;
 
     return volunteers.where((volunteer) {
       // Mantener visible el voluntario ya asignado para no romper
@@ -102,11 +122,19 @@ class _WeekEditorScreenState extends State<WeekEditorScreen> {
         return true;
       }
 
+      // En Alabanza, los voluntarios de imposición no pueden hacer
+      // la última vigilancia.
+      if (isAlabanza &&
+          isLastVigilance &&
+          volunteer.canImposition) {
+        return false;
+      }
+
       if (vigilanceTurnIndex == 0) {
         return volunteer.canFirstVigilance;
       }
 
-      if (vigilanceTurnIndex == vigilanceAssignments.length - 1) {
+      if (isLastVigilance) {
         return volunteer.canLastVigilance;
       }
 
@@ -325,9 +353,7 @@ class _WeekEditorScreenState extends State<WeekEditorScreen> {
           IconButton(
             icon: const Icon(Icons.auto_fix_high),
             tooltip: 'Autoasignar',
-            onPressed: () {
-              autoAssign();
-            },
+            onPressed: autoAssign,
           ),
           IconButton(
             icon: const Icon(Icons.delete),
@@ -439,7 +465,7 @@ class _WeekEditorScreenState extends State<WeekEditorScreen> {
                 bottom: 12,
               ),
               child: DropdownButtonFormField<String>(
-                value: dropdownValueFor(assignment),
+                initialValue: dropdownValueFor(assignment),
                 decoration: InputDecoration(
                   labelText:
                   '${assignment.role} (${assignment.startTime}-${assignment.endTime})',
@@ -525,7 +551,7 @@ class _WeekEditorScreenState extends State<WeekEditorScreen> {
                 bottom: 12,
               ),
               child: DropdownButtonFormField<String>(
-                value: dropdownValueFor(assignment),
+                initialValue: dropdownValueFor(assignment),
                 decoration: InputDecoration(
                   labelText:
                   '${assignment.role} (${assignment.startTime}-${assignment.endTime})',
@@ -608,7 +634,7 @@ class _WeekEditorScreenState extends State<WeekEditorScreen> {
                 bottom: 12,
               ),
               child: DropdownButtonFormField<String>(
-                value: dropdownValueFor(assignment),
+                initialValue: dropdownValueFor(assignment),
                 decoration: InputDecoration(
                   labelText:
                   '${assignment.role} (${assignment.startTime}-${assignment.endTime})',

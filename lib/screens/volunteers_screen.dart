@@ -97,6 +97,7 @@ class _VolunteersScreenState extends State<VolunteersScreen> {
     var canCleaning = false;
     var canBookTable = false;
     var canAudiovisuals = false;
+    var canImposition = false;
 
     showDialog(
       context: context,
@@ -143,23 +144,48 @@ class _VolunteersScreenState extends State<VolunteersScreen> {
                   onChanged: (value) =>
                       setDialogState(() => canAudiovisuals = value),
                 ),
+                _permissionCheckbox(
+                  title: 'Imposición',
+                  icon: Icons.pan_tool,
+                  value: canImposition,
+                  onChanged: (value) =>
+                      setDialogState(() => canImposition = value),
+                ),
                 CheckboxListTile(
                   contentPadding: EdgeInsets.zero,
-                  title: const Text('1ª vigilancia'),
+                  title: const Row(
+                    children: [
+                      Icon(Icons.visibility, size: 18),
+                      SizedBox(width: 8),
+                      Text('1ª vigilancia'),
+                    ],
+                  ),
                   value: canFirstVigilance,
                   onChanged: (value) =>
                       setDialogState(() => canFirstVigilance = value ?? false),
                 ),
                 CheckboxListTile(
                   contentPadding: EdgeInsets.zero,
-                  title: const Text('2ª vigilancia'),
+                  title: const Row(
+                    children: [
+                      Icon(Icons.visibility, size: 18),
+                      SizedBox(width: 8),
+                      Text('2ª vigilancia'),
+                    ],
+                  ),
                   value: canMiddleVigilance,
                   onChanged: (value) =>
                       setDialogState(() => canMiddleVigilance = value ?? false),
                 ),
                 CheckboxListTile(
                   contentPadding: EdgeInsets.zero,
-                  title: const Text('3ª vigilancia'),
+                  title: const Row(
+                    children: [
+                      Icon(Icons.visibility, size: 18),
+                      SizedBox(width: 8),
+                      Text('3ª vigilancia'),
+                    ],
+                  ),
                   value: canLastVigilance,
                   onChanged: (value) =>
                       setDialogState(() => canLastVigilance = value ?? false),
@@ -178,19 +204,20 @@ class _VolunteersScreenState extends State<VolunteersScreen> {
                 if (name.isNotEmpty) {
                   setState(() {
                     volunteers.add(
-                      Volunteer(
-                        id: DateTime.now().millisecondsSinceEpoch.toString(),
-                        name: name,
-                        isActive: true,
-                        canMicrophone: canMicrophone,
-                        canAccommodation: canAccommodation,
-                        canFirstVigilance: canFirstVigilance,
-                        canMiddleVigilance: canMiddleVigilance,
-                        canLastVigilance: canLastVigilance,
-                        canCleaning: canCleaning,
-                        canBookTable: canBookTable,
-                        canAudiovisuals: canAudiovisuals,
-                      ),
+                        Volunteer(
+                          id: DateTime.now().millisecondsSinceEpoch.toString(),
+                          name: name,
+                          isActive: true,
+                          canMicrophone: canMicrophone,
+                          canAccommodation: canAccommodation,
+                          canFirstVigilance: canFirstVigilance,
+                          canMiddleVigilance: canMiddleVigilance,
+                          canLastVigilance: canLastVigilance,
+                          canCleaning: canCleaning,
+                          canBookTable: canBookTable,
+                          canAudiovisuals: canAudiovisuals,
+                          canImposition: canImposition,
+                        )
                     );
                     sortVolunteers();
                   });
@@ -217,6 +244,7 @@ class _VolunteersScreenState extends State<VolunteersScreen> {
     var canCleaning = volunteer.canCleaning;
     var canBookTable = volunteer.canBookTable;
     var canAudiovisuals = volunteer.canAudiovisuals;
+    var canImposition = volunteer.canImposition;
 
     showDialog(
       context: context,
@@ -257,29 +285,54 @@ class _VolunteersScreenState extends State<VolunteersScreen> {
                   onChanged: (value) => setDialogState(() => canBookTable = value),
                 ),
                 _permissionCheckbox(
-                  title: 'Audiovisuales',
+                  title: 'Sonido',
                   icon: Icons.cast_connected,
                   value: canAudiovisuals,
                   onChanged: (value) =>
                       setDialogState(() => canAudiovisuals = value),
                 ),
+                _permissionCheckbox(
+                  title: 'Imposición',
+                  icon: Icons.pan_tool,
+                  value: canImposition,
+                  onChanged: (value) =>
+                      setDialogState(() => canImposition = value),
+                ),
                 CheckboxListTile(
                   contentPadding: EdgeInsets.zero,
-                  title: const Text('Primera vigilancia'),
+                  title: const Row(
+                    children: [
+                      Icon(Icons.visibility, size: 20),
+                      SizedBox(width: 8),
+                      Text('1ª vigilancia'),
+                    ],
+                  ),
                   value: canFirstVigilance,
                   onChanged: (value) =>
                       setDialogState(() => canFirstVigilance = value ?? false),
                 ),
                 CheckboxListTile(
                   contentPadding: EdgeInsets.zero,
-                  title: const Text('Vigilancia intermedia'),
+                  title: const Row(
+                    children: [
+                      Icon(Icons.visibility, size: 20),
+                      SizedBox(width: 8),
+                      Text('2ª vigilancia'),
+                    ],
+                  ),
                   value: canMiddleVigilance,
                   onChanged: (value) =>
                       setDialogState(() => canMiddleVigilance = value ?? false),
                 ),
                 CheckboxListTile(
                   contentPadding: EdgeInsets.zero,
-                  title: const Text('Última vigilancia'),
+                  title: const Row(
+                    children: [
+                      Icon(Icons.visibility, size: 20),
+                      SizedBox(width: 8),
+                      Text('3ª vigilancia'),
+                    ],
+                  ),
                   value: canLastVigilance,
                   onChanged: (value) =>
                       setDialogState(() => canLastVigilance = value ?? false),
@@ -309,6 +362,7 @@ class _VolunteersScreenState extends State<VolunteersScreen> {
                       canCleaning: canCleaning,
                       canBookTable: canBookTable,
                       canAudiovisuals: canAudiovisuals,
+                      canImposition: canImposition,
                     );
                     sortVolunteers();
                   });
@@ -383,6 +437,7 @@ class _VolunteersScreenState extends State<VolunteersScreen> {
         canCleaning: volunteer.canCleaning,
         canBookTable: volunteer.canBookTable,
         canAudiovisuals: volunteer.canAudiovisuals,
+        canImposition: volunteer.canImposition,
       );
       sortVolunteers();
     });
@@ -481,6 +536,11 @@ class _VolunteersScreenState extends State<VolunteersScreen> {
                       const Tooltip(
                         message: 'Puede hacer audiovisuales',
                         child: Icon(Icons.cast_connected, size: 18),
+                      ),
+                    if (volunteer.canImposition)
+                      const Tooltip(
+                        message: 'Puede hacer imposición',
+                        child: Icon(Icons.pan_tool, size: 18),
                       ),
                   ],
                 ),

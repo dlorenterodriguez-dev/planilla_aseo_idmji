@@ -11,6 +11,7 @@ class Volunteer {
   final bool canCleaning;
   final bool canBookTable;
   final bool canAudiovisuals;
+  final bool canImposition;
 
   const Volunteer({
     required this.id,
@@ -24,6 +25,7 @@ class Volunteer {
     this.canCleaning = false,
     this.canBookTable = false,
     this.canAudiovisuals = false,
+    this.canImposition = false,
   });
 
   Map<String, dynamic> toJson() {
@@ -39,6 +41,7 @@ class Volunteer {
       'canCleaning': canCleaning,
       'canBookTable': canBookTable,
       'canAudiovisuals': canAudiovisuals,
+      'canImposition': canImposition,
     };
   }
 
@@ -55,6 +58,7 @@ class Volunteer {
       canCleaning: json['canCleaning'] as bool? ?? false,
       canBookTable: json['canBookTable'] as bool? ?? false,
       canAudiovisuals: json['canAudiovisuals'] as bool? ?? false,
+      canImposition: json['canImposition'] as bool? ?? false,
     );
   }
 }

@@ -94,11 +94,12 @@ class _PlanillaPreviewScreenState
 
         await file.writeAsBytes(pngBytes);
 
-        await Share.shareXFiles(
-          [
-            XFile(file.path),
-          ],
-          text: 'Planilla de Vigilancia y Acomodación',
+        await SharePlus.instance.share(
+          ShareParams(
+            files: [
+              XFile(file.path),
+            ],
+          ),
         );
       }
 
