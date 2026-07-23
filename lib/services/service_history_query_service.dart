@@ -1,77 +1,47 @@
 import '../models/service_event.dart';
 import 'service_event_storage_service.dart';
 
+class VolunteerServiceStats {
+  final int total;
+  final Map<String, int> byEventType;
+  final DateTime? lastService;
+
+  const VolunteerServiceStats({
+    required this.total,
+    required this.byEventType,
+    required this.lastService,
+  });
+}
+
 class ServiceHistoryQueryService {
-  static Future<int> countAssignments({
-    required String volunteerId,
-    required String serviceType,
-    String? eventType,
-    DateTime? since,
-    DateTime? until,
-  }) async {
-    final counts = await countAssignmentsByVolunteer(
-      serviceType: serviceType,
-      eventType: eventType,
-      since: since,
-      until: until,
-    );
-
-    return counts[volunteerId] ?? 0;
-  }
-
-  static Future<Map<String, int>> countAssignmentsByVolunteer({
-    required String serviceType,
-    String? eventType,
-    DateTime? since,
-    DateTime? until,
-  }) async {
+  static Future<Map<String, VolunteerServiceStats>> statsByVolunteer() async {
     final events = await ServiceEventStorageService.loadEvents();
-    final counts = <String, int>{};
-    final countedAssignments = <String>{};
-
+    final byVolunteer = <String, List<ServiceEvent>>{};
     for (final event in events) {
-      if (!_isValid(event) || event.serviceType != serviceType) {
-        continue;
-      }
-      if (eventType != null && event.eventType != eventType) {
-        continue;
-      }
-      if (since != null && event.date.isBefore(since)) {
-        continue;
-      }
-      if (until != null && event.date.isAfter(until)) {
-        continue;
-      }
-
-      final assignmentKey = _assignmentKey(event);
-      if (!countedAssignments.add(assignmentKey)) {
-        continue;
-      }
-
-      counts.update(
-        event.volunteerId,
-        (count) => count + 1,
-        ifAbsent: () => 1,
-      );
+      if (event.volunteerId.isEmpty || event.eventId.isEmpty) continue;
+      byVolunteer.putIfAbsent(event.volunteerId, () => []).add(event);
     }
 
-    return counts;
-  }
-
-  static bool _isValid(ServiceEvent event) {
-    return event.volunteerId.isNotEmpty &&
-        event.serviceType.isNotEmpty &&
-        event.eventId.isNotEmpty;
-  }
-
-  static String _assignmentKey(ServiceEvent event) {
-    return [
-      event.eventId,
-      event.volunteerId,
-      event.serviceType,
-      event.role,
-      event.startTime,
-      event.endTime,
-    ].join('|');
+    return byVolunteer.map((volunteerId, volunteerEvents) {
+      final unique = <String, ServiceEvent>{
+        for (final event in volunteerEvents) event.eventId: event,
+      }.values.toList();
+      final byType = <String, int>{};
+      DateTime? lastService;
+      for (final event in unique) {
+        byType.update(event.eventType, (count) => count + 1, ifAbsent: () => 1);
+        if (lastService == null || event.date.isAfter(lastService)) {
+          lastService = event.date;
+        }
+      }
+      return MapEntry(
+        volunteerId,
+        VolunteerServiceStats(
+          total: unique.length,
+          byEventType: byType,
+          lastService: lastService,
+        ),
+      );
+    });
   }
 }

@@ -1,6 +1,6 @@
-# IDMJI Voluntariado Vigilancia
+# IDMJI Voluntariado Biblias
 
-Aplicación Flutter para la gestión de voluntarios y asignaciones de la IDMJI.
+Aplicación Flutter para gestionar las voluntarias y planillas de Biblias de la IDMJI.
 
 ## Funcionalidades actuales
 

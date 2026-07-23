@@ -1,128 +1,119 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:planilla_idmji/models/assignment.dart';
-import 'package:planilla_idmji/models/event_templates.dart';
-import 'package:planilla_idmji/models/service_event.dart';
-import 'package:planilla_idmji/models/service_types.dart';
-import 'package:planilla_idmji/models/volunteer.dart';
-import 'package:planilla_idmji/services/auto_assignment_service.dart';
-import 'package:planilla_idmji/services/service_event_storage_service.dart';
+import 'package:planilla_biblias_idmji/models/absence_period.dart';
+import 'package:planilla_biblias_idmji/models/assignment.dart';
+import 'package:planilla_biblias_idmji/models/event_templates.dart';
+import 'package:planilla_biblias_idmji/models/service_event.dart';
+import 'package:planilla_biblias_idmji/models/volunteer.dart';
+import 'package:planilla_biblias_idmji/services/auto_assignment_service.dart';
+import 'package:planilla_biblias_idmji/services/service_event_storage_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
-  TestWidgetsFlutterBinding.ensureInitialized();
-
-  const volunteers = [
-    Volunteer(id: 'volunteer-1', name: 'Ana', isActive: true),
-    Volunteer(id: 'volunteer-2', name: 'Bea', isActive: true),
-    Volunteer(id: 'volunteer-3', name: 'Celia', isActive: true),
-  ];
-
-  setUp(() async {
+  setUp(() {
     SharedPreferences.setMockInitialValues({});
+  });
+
+  test('reparte un mes con una diferencia máxima de un servicio', () async {
+    final volunteers = [
+      const Volunteer(id: 'a', name: 'Ana'),
+      const Volunteer(id: 'b', name: 'Beatriz'),
+      const Volunteer(id: 'c', name: 'Carmen'),
+    ];
+    final assignments = <Assignment>[];
+    final occurrences = EventTemplates.forMonth(DateTime(2026, 8));
+
+    await AutoAssignmentService.autoAssign(
+      occurrences: occurrences,
+      assignments: assignments,
+      volunteers: volunteers,
+    );
+
+    final counts = {
+      for (final volunteer in volunteers)
+        volunteer.id: assignments
+            .where((assignment) => assignment.volunteerId == volunteer.id)
+            .length,
+    };
+    expect(assignments, hasLength(occurrences.length));
+    expect(
+      counts.values.reduce((a, b) => a > b ? a : b) -
+          counts.values.reduce((a, b) => a < b ? a : b),
+      lessThanOrEqualTo(1),
+    );
+  });
+
+  test('conserva manuales y respeta disponibilidad y ausencias', () async {
+    final monday = DateTime(2026, 8, 3);
+    final occurrences = EventTemplates.forWeek(monday);
+    final assignments = [
+      Assignment(
+        eventId: occurrences.first.eventId,
+        eventType: occurrences.first.eventType,
+        date: occurrences.first.date,
+        volunteerId: 'manual',
+      ),
+    ];
+    final volunteers = [
+      const Volunteer(id: 'manual', name: 'Manual'),
+      Volunteer(
+        id: 'ausente',
+        name: 'Ausente',
+        absences: [
+          AbsencePeriod(
+            start: monday,
+            end: monday.add(const Duration(days: 7)),
+          ),
+        ],
+      ),
+      const Volunteer(
+        id: 'solo-estudio',
+        name: 'Solo estudio',
+        availableAlabanza: false,
+        availableEnsenanza: false,
+      ),
+    ];
+
+    await AutoAssignmentService.autoAssign(
+      occurrences: occurrences,
+      assignments: assignments,
+      volunteers: volunteers,
+    );
+
+    expect(assignments.first.volunteerId, 'manual');
+    expect(
+      assignments
+          .where((assignment) => assignment.eventType == 'estudio')
+          .single
+          .volunteerId,
+      'solo-estudio',
+    );
+    expect(
+      assignments.any((assignment) => assignment.volunteerId == 'ausente'),
+      isFalse,
+    );
+  });
+
+  test('favorece a quien menos ha servido históricamente', () async {
     await ServiceEventStorageService.saveEvents([
-      _vigilanceEvent('volunteer-1', DateTime(2026, 7, 7)),
-      _vigilanceEvent('volunteer-1', DateTime(2026, 7, 14)),
-      _vigilanceEvent('volunteer-2', DateTime(2026, 7, 14)),
+      ServiceEvent(
+        volunteerId: 'a',
+        eventType: 'alabanza',
+        eventId: '2026-07-01-alabanza',
+        date: DateTime(2026, 7, 1),
+      ),
     ]);
-  });
-
-  test('prefers volunteers with fewer historical assignments', () async {
-    final assignments = EventTemplates.alabanza();
+    final occurrence = EventTemplates.forWeek(DateTime(2026, 8, 3)).first;
+    final assignments = <Assignment>[];
 
     await AutoAssignmentService.autoAssign(
+      occurrences: [occurrence],
       assignments: assignments,
-      volunteers: volunteers,
-      isAlabanza: true,
-      weeklyAssignmentCounts: {},
+      volunteers: const [
+        Volunteer(id: 'a', name: 'Ana'),
+        Volunteer(id: 'b', name: 'Beatriz'),
+      ],
     );
 
-    expect(
-      assignments.map((assignment) => assignment.volunteerId),
-      ['volunteer-3', 'volunteer-2', 'volunteer-1'],
-    );
+    expect(assignments.single.volunteerId, 'b');
   });
-
-  test('preserves manual assignments while applying historical fairness',
-      () async {
-    final assignments = EventTemplates.alabanza();
-    assignments.first.volunteerId = 'volunteer-1';
-
-    await AutoAssignmentService.autoAssign(
-      assignments: assignments,
-      volunteers: volunteers,
-      isAlabanza: true,
-      weeklyAssignmentCounts: {'volunteer-1': 1},
-    );
-
-    expect(
-      assignments.map((assignment) => assignment.volunteerId),
-      ['volunteer-1', 'volunteer-3', 'volunteer-2'],
-    );
-  });
-
-  test('shares weekly load across independent service calls', () async {
-    await ServiceEventStorageService.saveEvents([]);
-    final weeklyAssignmentCounts = <String, int>{};
-    final firstService = [_singleVigilance()];
-    final secondService = [_singleVigilance()];
-
-    await AutoAssignmentService.autoAssign(
-      assignments: firstService,
-      volunteers: volunteers,
-      isAlabanza: false,
-      weeklyAssignmentCounts: weeklyAssignmentCounts,
-    );
-    await AutoAssignmentService.autoAssign(
-      assignments: secondService,
-      volunteers: volunteers,
-      isAlabanza: false,
-      weeklyAssignmentCounts: weeklyAssignmentCounts,
-    );
-
-    expect(firstService.single.volunteerId, 'volunteer-1');
-    expect(secondService.single.volunteerId, 'volunteer-2');
-  });
-
-  test('allows weekly repetition when there is no eligible alternative',
-      () async {
-    await ServiceEventStorageService.saveEvents([]);
-    final weeklyAssignmentCounts = <String, int>{};
-    final firstService = [_singleVigilance()];
-    final secondService = [_singleVigilance()];
-
-    for (final assignments in [firstService, secondService]) {
-      await AutoAssignmentService.autoAssign(
-        assignments: assignments,
-        volunteers: [volunteers.first],
-        isAlabanza: false,
-        weeklyAssignmentCounts: weeklyAssignmentCounts,
-      );
-    }
-
-    expect(firstService.single.volunteerId, 'volunteer-1');
-    expect(secondService.single.volunteerId, 'volunteer-1');
-    expect(weeklyAssignmentCounts['volunteer-1'], 2);
-  });
-}
-
-Assignment _singleVigilance() {
-  return Assignment(
-    role: 'Vigilancia',
-    startTime: '18:00',
-    endTime: '19:00',
-  );
-}
-
-ServiceEvent _vigilanceEvent(String volunteerId, DateTime date) {
-  final dateKey = date.toIso8601String().substring(0, 10);
-  return ServiceEvent(
-    volunteerId: volunteerId,
-    serviceType: ServiceTypes.vigilance,
-    eventType: 'alabanza',
-    role: 'Vigilancia',
-    startTime: '18:00',
-    endTime: '19:00',
-    eventId: '$dateKey-alabanza',
-    date: date,
-  );
 }

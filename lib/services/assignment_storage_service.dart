@@ -1,112 +1,49 @@
+import 'dart:convert';
+
 import 'package:shared_preferences/shared_preferences.dart';
+
 import '../models/assignment.dart';
 
 class AssignmentStorageService {
-  static Future<void> saveAssignments({
-    required List<Assignment> alabanza,
-    required List<Assignment> estudio,
-    required List<Assignment> ensenanza,
-  }) async {
+  static const String storageKey = 'biblias_assignments_v1';
+
+  static Future<List<Assignment>> loadAssignments() async {
     final prefs = await SharedPreferences.getInstance();
-
-    final alabanzaData =
-    alabanza.map((a) => a.volunteerId ?? '').toList();
-
-    final estudioData =
-    estudio.map((a) => a.volunteerId ?? '').toList();
-
-    final ensenanzaData =
-    ensenanza.map((a) => a.volunteerId ?? '').toList();
-
-    await prefs.setStringList(
-      'alabanza_assignments_v2',
-      alabanzaData,
-    );
-
-    await prefs.setStringList(
-      'estudio_assignments_v2',
-      estudioData,
-    );
-
-    await prefs.setStringList(
-      'ensenanza_assignments_v2',
-      ensenanzaData,
-    );
+    return (prefs.getStringList(storageKey) ?? const [])
+        .map(
+          (value) => Assignment.fromJson(
+            Map<String, dynamic>.from(jsonDecode(value) as Map),
+          ),
+        )
+        .toList();
   }
-  static Future<int> countVolunteerAssignments(
-      String volunteerId,
-      ) async {
+
+  static Future<void> saveAssignments(List<Assignment> assignments) async {
     final prefs = await SharedPreferences.getInstance();
-
-    final alabanza =
-        prefs.getStringList('alabanza_assignments_v2') ?? [];
-
-    final estudio =
-        prefs.getStringList('estudio_assignments_v2') ?? [];
-
-    final ensenanza =
-        prefs.getStringList('ensenanza_assignments_v2') ?? [];
-
-    int count = 0;
-
-    count += alabanza.where((id) => id == volunteerId).length;
-    count += estudio.where((id) => id == volunteerId).length;
-    count += ensenanza.where((id) => id == volunteerId).length;
-
-    return count;
+    final normalized = <String, Assignment>{
+      for (final assignment in assignments) assignment.eventId: assignment,
+    }.values.toList()..sort((a, b) => a.date.compareTo(b.date));
+    final saved = await prefs.setStringList(
+      storageKey,
+      normalized.map((assignment) => jsonEncode(assignment.toJson())).toList(),
+    );
+    if (!saved) throw StateError('No se pudieron guardar las asignaciones');
   }
-  static Future<void> removeVolunteerFromAssignments(
-      String volunteerId,
-      ) async {
-    final prefs = await SharedPreferences.getInstance();
 
-    final alabanza =
-        prefs.getStringList('alabanza_assignments_v2') ?? [];
+  static Future<int> countVolunteerAssignments(String volunteerId) async {
+    final assignments = await loadAssignments();
+    return assignments
+        .where((assignment) => assignment.volunteerId == volunteerId)
+        .length;
+  }
 
-    final estudio =
-        prefs.getStringList('estudio_assignments_v2') ?? [];
-
-    final ensenanza =
-        prefs.getStringList('ensenanza_assignments_v2') ?? [];
-
-    for (int i = 0; i < alabanza.length; i++) {
-      if (alabanza[i] == volunteerId) {
-        alabanza[i] = '';
+  static Future<void> removeVolunteerFromAssignments(String volunteerId) async {
+    final assignments = await loadAssignments();
+    for (final assignment in assignments) {
+      if (assignment.volunteerId == volunteerId) {
+        assignment.volunteerId = null;
       }
     }
-
-    for (int i = 0; i < estudio.length; i++) {
-      if (estudio[i] == volunteerId) {
-        estudio[i] = '';
-      }
-    }
-
-    for (int i = 0; i < ensenanza.length; i++) {
-      if (ensenanza[i] == volunteerId) {
-        ensenanza[i] = '';
-      }
-    }
-
-    await prefs.setStringList(
-      'alabanza_assignments_v2',
-      alabanza,
-    );
-
-    await prefs.setStringList(
-      'estudio_assignments_v2',
-      estudio,
-    );
-
-    await prefs.setStringList(
-      'ensenanza_assignments_v2',
-      ensenanza,
-    );
-  }
-  static Future<List<String>> loadAssignmentIds(
-      String key,
-      ) async {
-    final prefs = await SharedPreferences.getInstance();
-
-    return prefs.getStringList(key) ?? [];
+    await saveAssignments(assignments);
   }
 }

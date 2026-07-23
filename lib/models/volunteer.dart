@@ -1,64 +1,79 @@
+import 'absence_period.dart';
+
 class Volunteer {
   final String id;
   final String name;
   final bool isActive;
-
-  final bool canMicrophone;
-  final bool canAccommodation;
-  final bool canFirstVigilance;
-  final bool canMiddleVigilance;
-  final bool canLastVigilance;
-  final bool canCleaning;
-  final bool canBookTable;
-  final bool canAudiovisuals;
-  final bool canImposition;
+  final bool availableAlabanza;
+  final bool availableEstudio;
+  final bool availableEnsenanza;
+  final List<AbsencePeriod> absences;
 
   const Volunteer({
     required this.id,
     required this.name,
-    required this.isActive,
-    this.canMicrophone = false,
-    this.canAccommodation = false,
-    this.canFirstVigilance = true,
-    this.canMiddleVigilance = true,
-    this.canLastVigilance = true,
-    this.canCleaning = false,
-    this.canBookTable = false,
-    this.canAudiovisuals = false,
-    this.canImposition = false,
+    this.isActive = true,
+    this.availableAlabanza = true,
+    this.availableEstudio = true,
+    this.availableEnsenanza = true,
+    this.absences = const [],
   });
 
-  Map<String, dynamic> toJson() {
-    return {
-      'id': id,
-      'name': name,
-      'isActive': isActive,
-      'canMicrophone': canMicrophone,
-      'canAccommodation': canAccommodation,
-      'canFirstVigilance': canFirstVigilance,
-      'canMiddleVigilance': canMiddleVigilance,
-      'canLastVigilance': canLastVigilance,
-      'canCleaning': canCleaning,
-      'canBookTable': canBookTable,
-      'canAudiovisuals': canAudiovisuals,
-      'canImposition': canImposition,
+  bool isAvailableFor(String eventType, DateTime date) {
+    final availableForCulto = switch (eventType) {
+      'alabanza' => availableAlabanza,
+      'estudio' => availableEstudio,
+      'ensenanza' => availableEnsenanza,
+      _ => false,
     };
+    return isActive &&
+        availableForCulto &&
+        !absences.any((absence) => absence.includes(date));
   }
+
+  Volunteer copyWith({
+    String? name,
+    bool? isActive,
+    bool? availableAlabanza,
+    bool? availableEstudio,
+    bool? availableEnsenanza,
+    List<AbsencePeriod>? absences,
+  }) {
+    return Volunteer(
+      id: id,
+      name: name ?? this.name,
+      isActive: isActive ?? this.isActive,
+      availableAlabanza: availableAlabanza ?? this.availableAlabanza,
+      availableEstudio: availableEstudio ?? this.availableEstudio,
+      availableEnsenanza: availableEnsenanza ?? this.availableEnsenanza,
+      absences: absences ?? this.absences,
+    );
+  }
+
+  Map<String, dynamic> toJson() => {
+    'id': id,
+    'name': name,
+    'isActive': isActive,
+    'availableAlabanza': availableAlabanza,
+    'availableEstudio': availableEstudio,
+    'availableEnsenanza': availableEnsenanza,
+    'absences': absences.map((absence) => absence.toJson()).toList(),
+  };
 
   factory Volunteer.fromJson(Map<String, dynamic> json) {
     return Volunteer(
       id: json['id'] as String,
       name: json['name'] as String,
-      isActive: json['isActive'] as bool? ?? false,
-      canMicrophone: json['canMicrophone'] as bool? ?? false,
-      canAccommodation: json['canAccommodation'] as bool? ?? false,
-      canFirstVigilance: json['canFirstVigilance'] as bool? ?? true,
-      canMiddleVigilance: json['canMiddleVigilance'] as bool? ?? true,
-      canLastVigilance: json['canLastVigilance'] as bool? ?? true,
-      canCleaning: json['canCleaning'] as bool? ?? false,
-      canBookTable: json['canBookTable'] as bool? ?? false,
-      canAudiovisuals: json['canAudiovisuals'] as bool? ?? false,
-      canImposition: json['canImposition'] as bool? ?? false,
+      isActive: json['isActive'] as bool? ?? true,
+      availableAlabanza: json['availableAlabanza'] as bool? ?? true,
+      availableEstudio: json['availableEstudio'] as bool? ?? true,
+      availableEnsenanza: json['availableEnsenanza'] as bool? ?? true,
+      absences: (json['absences'] as List<dynamic>? ?? const [])
+          .map(
+            (value) =>
+                AbsencePeriod.fromJson(Map<String, dynamic>.from(value as Map)),
+          )
+          .toList(),
     );
   }
 }

@@ -1,9 +1,1 @@
-const List<String> defaultVolunteers = [
-  'Orlando',
-  'Mario',
-  'Daniel',
-  'Yeison',
-  'Javier',
-  'Edulfo',
-  'Kevin',
-];
+const List<String> defaultVolunteers = [];

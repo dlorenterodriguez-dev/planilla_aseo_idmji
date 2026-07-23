@@ -38,7 +38,7 @@ class _BackupScreenState extends State<BackupScreen> {
       final backupJson = await BackupService.createBackupJson();
       final now = DateTime.now();
       final fileName =
-          'idmji_vigilancia_${DateFormat('yyyy-MM-dd').format(now)}.json';
+          'idmji_biblias_${DateFormat('yyyy-MM-dd').format(now)}.json';
       final file = XFile.fromData(
         Uint8List.fromList(utf8.encode(backupJson)),
         mimeType: 'application/json',
@@ -49,7 +49,7 @@ class _BackupScreenState extends State<BackupScreen> {
         ShareParams(
           files: [file],
           fileNameOverrides: [fileName],
-          subject: 'Copia de seguridad de IDMJI Voluntariado Vigilancia',
+          subject: 'Copia de seguridad de IDMJI Voluntariado Biblias',
         ),
       );
     });
@@ -131,7 +131,7 @@ class _BackupScreenState extends State<BackupScreen> {
               '${DateFormat('dd/MM/yyyy HH:mm').format(summary.exportedAt.toLocal())}',
             ),
             Text('Voluntarios: ${summary.volunteerCount}'),
-            Text('Asignaciones actuales: ${summary.assignmentCount}'),
+            Text('Asignaciones guardadas: ${summary.assignmentCount}'),
             Text('Registros históricos: ${summary.serviceEventCount}'),
             Text('Cultos procesados: ${summary.processedServiceCount}'),
           ],
@@ -165,9 +165,9 @@ class _BackupScreenState extends State<BackupScreen> {
   }
 
   void _showMessage(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(message)),
-    );
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(message)));
   }
 
   String _errorMessage(Object error) {
@@ -200,7 +200,8 @@ class _BackupScreenState extends State<BackupScreen> {
           _BackupActionCard(
             icon: Icons.download,
             title: 'Importar copia',
-            description: 'Valida el archivo antes de reemplazar los datos locales.',
+            description:
+                'Valida el archivo antes de reemplazar los datos locales.',
             buttonLabel: 'Seleccionar archivo',
             onPressed: _isBusy ? null : _importBackup,
           ),
@@ -209,7 +210,8 @@ class _BackupScreenState extends State<BackupScreen> {
             _BackupActionCard(
               icon: Icons.restore,
               title: 'Recuperar datos anteriores',
-              description: 'Restaura el estado guardado antes de la última importación.',
+              description:
+                  'Restaura el estado guardado antes de la última importación.',
               buttonLabel: 'Recuperar',
               onPressed: _isBusy ? null : _restorePreviousData,
             ),
@@ -257,10 +259,7 @@ class _BackupActionCard extends StatelessWidget {
             const SizedBox(height: 8),
             Text(description),
             const SizedBox(height: 12),
-            FilledButton(
-              onPressed: onPressed,
-              child: Text(buttonLabel),
-            ),
+            FilledButton(onPressed: onPressed, child: Text(buttonLabel)),
           ],
         ),
       ),

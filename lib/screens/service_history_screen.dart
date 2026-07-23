@@ -1,10 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
-import '../models/assignment.dart';
-import '../models/event_templates.dart';
 import '../models/service_event.dart';
-import '../models/service_types.dart';
 import '../models/volunteer.dart';
 import '../services/processed_services_storage.dart';
 import '../services/service_event_storage_service.dart';
@@ -19,112 +16,73 @@ class ServiceHistoryScreen extends StatefulWidget {
 }
 
 class _ServiceHistoryScreenState extends State<ServiceHistoryScreen> {
-  var _isLoading = true;
-  var _canUndo = false;
-  Object? _loadError;
-  List<_HistoryGroup> _groups = [];
+  List<ServiceEvent> _events = [];
   List<Volunteer> _volunteers = [];
+  Set<String> _processed = {};
+  var _loading = true;
+  var _canUndo = false;
 
   @override
   void initState() {
     super.initState();
-    _loadHistory();
+    _load();
   }
 
-  Future<void> _loadHistory() async {
-    if (mounted) {
-      setState(() {
-        _isLoading = true;
-        _loadError = null;
-      });
-    }
-
-    try {
-      final eventsFuture = ServiceEventStorageService.loadEvents();
-      final processedFuture = ProcessedServicesStorage.loadProcessed();
-      final volunteersFuture = VolunteerStorageService.loadVolunteers();
-      final undoFuture = ServiceHistoryCorrectionService.canUndo();
-
-      final events = await eventsFuture;
-      final processed = await processedFuture;
-      final volunteers = await volunteersFuture;
-      final canUndo = await undoFuture;
-
-      volunteers.sort(
-        (a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()),
-      );
-
-      if (!mounted) return;
-      setState(() {
-        _groups = _buildGroups(events, processed);
-        _volunteers = volunteers;
-        _canUndo = canUndo;
-        _isLoading = false;
-      });
-    } catch (error) {
-      if (!mounted) return;
-      setState(() {
-        _loadError = error;
-        _isLoading = false;
-      });
-    }
+  Future<void> _load() async {
+    final events = await ServiceEventStorageService.loadEvents();
+    final volunteers = await VolunteerStorageService.loadVolunteers();
+    final processed = await ProcessedServicesStorage.loadProcessed();
+    final canUndo = await ServiceHistoryCorrectionService.canUndo();
+    events.sort((a, b) => b.date.compareTo(a.date));
+    if (!mounted) return;
+    setState(() {
+      _events = events;
+      _volunteers = volunteers;
+      _processed = processed;
+      _canUndo = canUndo;
+      _loading = false;
+    });
   }
 
-  Future<void> _editSlot(_HistoryGroup group, _HistorySlot slot) async {
-    final currentVolunteerId = slot.event?.volunteerId ?? '';
-    var selectedVolunteerId = currentVolunteerId;
-    final knownIds = _volunteers.map((volunteer) => volunteer.id).toSet();
-
-    final selected = await showDialog<String>(
+  Future<void> _correct(_HistoryRow row) async {
+    var selected = row.event?.volunteerId ?? '';
+    final result = await showDialog<String>(
       context: context,
       builder: (context) => StatefulBuilder(
         builder: (context, setDialogState) => AlertDialog(
-          title: const Text('Corregir puesto'),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(slot.assignment.role),
-              Text(
-                '${slot.assignment.startTime}-${slot.assignment.endTime}',
-                style: Theme.of(context).textTheme.bodySmall,
+          title: const Text('Corregir servicio'),
+          content: DropdownButtonFormField<String>(
+            initialValue: selected,
+            decoration: const InputDecoration(
+              labelText: 'Voluntaria que sirvió',
+              border: OutlineInputBorder(),
+            ),
+            items: [
+              const DropdownMenuItem(
+                value: '',
+                child: Text('— No realizado —'),
               ),
-              const SizedBox(height: 16),
-              DropdownButtonFormField<String>(
-                initialValue: selectedVolunteerId,
-                isExpanded: true,
-                decoration: const InputDecoration(
-                  labelText: 'Voluntario que sirvió',
-                  border: OutlineInputBorder(),
+              if (selected.isNotEmpty &&
+                  !_volunteers.any((volunteer) => volunteer.id == selected))
+                DropdownMenuItem(
+                  value: selected,
+                  child: const Text('Voluntaria eliminada'),
                 ),
-                items: [
-                  const DropdownMenuItem(
-                    value: '',
-                    child: Text('— No realizado —'),
+              ..._volunteers.map(
+                (volunteer) => DropdownMenuItem(
+                  value: volunteer.id,
+                  child: Text(
+                    volunteer.isActive
+                        ? volunteer.name
+                        : '${volunteer.name} · inactiva',
                   ),
-                  if (currentVolunteerId.isNotEmpty &&
-                      !knownIds.contains(currentVolunteerId))
-                    DropdownMenuItem(
-                      value: currentVolunteerId,
-                      child: Text(currentVolunteerId),
-                    ),
-                  ..._volunteers.map(
-                    (volunteer) => DropdownMenuItem(
-                      value: volunteer.id,
-                      child: Text(
-                        volunteer.isActive
-                            ? volunteer.name
-                            : '${volunteer.name} (inactivo)',
-                      ),
-                    ),
-                  ),
-                ],
-                onChanged: (value) {
-                  if (value == null) return;
-                  setDialogState(() => selectedVolunteerId = value);
-                },
+                ),
               ),
             ],
+            onChanged: (value) {
+              selected = value ?? '';
+              setDialogState(() {});
+            },
           ),
           actions: [
             TextButton(
@@ -132,363 +90,129 @@ class _ServiceHistoryScreenState extends State<ServiceHistoryScreen> {
               child: const Text('Cancelar'),
             ),
             FilledButton(
-              onPressed: () => Navigator.pop(context, selectedVolunteerId),
-              child: const Text('Guardar corrección'),
+              onPressed: () => Navigator.pop(context, selected),
+              child: const Text('Guardar'),
             ),
           ],
         ),
       ),
     );
-
-    if (selected == null || selected == currentVolunteerId || !mounted) return;
-
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Confirmar corrección'),
-        content: Text(
-          selected.isEmpty
-              ? 'El puesto quedará marcado como no realizado.'
-              : 'Se actualizará el voluntario que realizó este puesto.',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text('Cancelar'),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.pop(context, true),
-            child: const Text('Confirmar'),
-          ),
-        ],
+    if (result == null || result == row.event?.volunteerId) return;
+    await ServiceHistoryCorrectionService.correctAssignment(
+      eventId: row.eventId,
+      eventType: row.eventType,
+      date: row.date,
+      volunteerId: result,
+    );
+    await _load();
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: const Text('Histórico actualizado'),
+        action: SnackBarAction(label: 'Deshacer', onPressed: _undo),
       ),
     );
-    if (confirmed != true) return;
-
-    try {
-      await ServiceHistoryCorrectionService.correctAssignment(
-        eventId: group.eventId,
-        eventType: group.eventType,
-        serviceType: slot.serviceType,
-        date: group.date,
-        assignment: slot.assignment,
-        volunteerId: selected,
-      );
-      await _loadHistory();
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: const Text('Histórico actualizado'),
-          action: SnackBarAction(
-            label: 'Deshacer',
-            onPressed: _undoLastCorrection,
-          ),
-        ),
-      );
-    } catch (_) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('No se pudo corregir el histórico')),
-      );
-    }
   }
 
-  Future<void> _undoLastCorrection() async {
-    try {
-      await ServiceHistoryCorrectionService.undoLastCorrection();
-      await _loadHistory();
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Corrección deshecha')),
+  Future<void> _undo() async {
+    await ServiceHistoryCorrectionService.undoLastCorrection();
+    await _load();
+    if (!mounted) return;
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(const SnackBar(content: Text('Corrección deshecha')));
+  }
+
+  List<_HistoryRow> get _rows {
+    final eventById = {for (final event in _events) event.eventId: event};
+    final ids = {..._processed, ...eventById.keys};
+    final rows = ids.map((eventId) {
+      final event = eventById[eventId];
+      return _HistoryRow(
+        eventId: eventId,
+        eventType: event?.eventType ?? _eventTypeFromId(eventId),
+        date: event?.date ?? DateTime.parse(eventId.substring(0, 10)),
+        event: event,
       );
-    } catch (_) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('No se pudo deshacer la corrección')),
-      );
-    }
+    }).toList()..sort((a, b) => b.date.compareTo(a.date));
+    return rows;
   }
 
   @override
   Widget build(BuildContext context) {
+    final rows = _rows;
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Histórico de servicios'),
+        title: const Text('Histórico de Biblias'),
         actions: [
           if (_canUndo)
             IconButton(
-              icon: const Icon(Icons.undo),
+              onPressed: _undo,
               tooltip: 'Deshacer última corrección',
-              onPressed: _undoLastCorrection,
+              icon: const Icon(Icons.undo),
             ),
         ],
       ),
-      body: _buildBody(),
+      body: _loading
+          ? const Center(child: CircularProgressIndicator())
+          : rows.isEmpty
+          ? const Center(child: Text('Todavía no hay cultos contabilizados'))
+          : RefreshIndicator(
+              onRefresh: _load,
+              child: ListView.builder(
+                padding: const EdgeInsets.all(12),
+                itemCount: rows.length,
+                itemBuilder: (context, index) {
+                  final row = rows[index];
+                  final volunteer = _volunteers
+                      .where(
+                        (candidate) => candidate.id == row.event?.volunteerId,
+                      )
+                      .firstOrNull;
+                  return Card(
+                    child: ListTile(
+                      leading: const Icon(Icons.menu_book_outlined),
+                      title: Text(
+                        volunteer?.name ??
+                            (row.event == null
+                                ? 'No realizado'
+                                : 'Voluntaria desconocida'),
+                      ),
+                      subtitle: Text(
+                        '${_eventTypeLabel(row.eventType)} · '
+                        '${DateFormat('dd/MM/yyyy').format(row.date)}',
+                      ),
+                      trailing: const Icon(Icons.edit_outlined),
+                      onTap: () => _correct(row),
+                    ),
+                  );
+                },
+              ),
+            ),
     );
   }
 
-  Widget _buildBody() {
-    if (_isLoading) {
-      return const Center(child: CircularProgressIndicator());
-    }
+  static String _eventTypeFromId(String eventId) =>
+      eventId.length > 11 ? eventId.substring(11) : '';
 
-    if (_loadError != null) {
-      return Center(
-        child: FilledButton.icon(
-          onPressed: _loadHistory,
-          icon: const Icon(Icons.refresh),
-          label: const Text('Reintentar'),
-        ),
-      );
-    }
-
-    if (_groups.isEmpty) {
-      return Center(
-        child: Padding(
-          padding: const EdgeInsets.all(24),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Icon(Icons.history, size: 48),
-              const SizedBox(height: 12),
-              const Text(
-                'Todavía no hay servicios contabilizados',
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 12),
-              FilledButton.icon(
-                onPressed: _loadHistory,
-                icon: const Icon(Icons.refresh),
-                label: const Text('Actualizar'),
-              ),
-            ],
-          ),
-        ),
-      );
-    }
-
-    return RefreshIndicator(
-      onRefresh: _loadHistory,
-      child: ListView.builder(
-        padding: const EdgeInsets.all(12),
-        itemCount: _groups.length,
-        itemBuilder: (context, index) {
-          final group = _groups[index];
-          final completedSlots =
-              group.slots.where((slot) => slot.event != null).length;
-          return Card(
-            child: ExpansionTile(
-              initiallyExpanded: index == 0,
-              leading: const Icon(Icons.event_available),
-              title: Text(
-                '${_eventTypeLabel(group.eventType)} · '
-                '${DateFormat('dd/MM/yyyy').format(group.date)}',
-              ),
-              subtitle: Text(
-                '$completedSlots de ${group.slots.length} puestos registrados',
-              ),
-              children: group.slots
-                  .map((slot) => _buildSlotTile(group, slot))
-                  .toList(),
-            ),
-          );
-        },
-      ),
-    );
-  }
-
-  Widget _buildSlotTile(_HistoryGroup group, _HistorySlot slot) {
-    final event = slot.event;
-    final volunteer = event == null
-        ? null
-        : _firstOrNull(
-            _volunteers.where(
-              (candidate) => candidate.id == event.volunteerId,
-            ),
-          );
-    final volunteerLabel = event == null
-        ? 'Sin registrar'
-        : volunteer?.name ?? event.volunteerId;
-
-    return ListTile(
-      leading: Icon(_serviceTypeIcon(slot.serviceType)),
-      title: Text(volunteerLabel),
-      subtitle: Text(
-        '${slot.assignment.role} · '
-        '${slot.assignment.startTime}-${slot.assignment.endTime}',
-      ),
-      trailing: const Icon(Icons.edit_outlined),
-      onTap: () => _editSlot(group, slot),
-    );
-  }
-
-  static List<_HistoryGroup> _buildGroups(
-    List<ServiceEvent> events,
-    Set<String> processedEventIds,
-  ) {
-    final allEventIds = {
-      ...processedEventIds,
-      ...events.map((event) => event.eventId),
-    };
-    final eventsById = <String, List<ServiceEvent>>{};
-    for (final event in events) {
-      eventsById.putIfAbsent(event.eventId, () => []).add(event);
-    }
-
-    final groups = <_HistoryGroup>[];
-    for (final eventId in allEventIds) {
-      final groupEvents = eventsById[eventId] ?? [];
-      final eventType = groupEvents.isNotEmpty
-          ? groupEvents.first.eventType
-          : _eventTypeFromId(eventId);
-      final date = groupEvents.isNotEmpty
-          ? groupEvents.first.date
-          : _dateFromId(eventId);
-      if (eventType == null || date == null) continue;
-
-      final template = _templateFor(eventType);
-      final slots = template.map((assignment) {
-        final matchingEvents = groupEvents.where(
-          (event) =>
-              event.role == assignment.role &&
-              event.startTime == assignment.startTime &&
-              event.endTime == assignment.endTime,
-        );
-        return _HistorySlot(
-          assignment: assignment,
-          serviceType: ServiceTypes.fromRole(assignment.role),
-          event: _firstOrNull(matchingEvents),
-        );
-      }).toList();
-
-      for (final event in groupEvents) {
-        final represented = slots.any(
-          (slot) =>
-              slot.assignment.role == event.role &&
-              slot.assignment.startTime == event.startTime &&
-              slot.assignment.endTime == event.endTime,
-        );
-        if (!represented) {
-          slots.add(
-            _HistorySlot(
-              assignment: Assignment(
-                role: event.role,
-                startTime: event.startTime,
-                endTime: event.endTime,
-              ),
-              serviceType: event.serviceType,
-              event: event,
-            ),
-          );
-        }
-      }
-
-      slots.sort(
-        (a, b) => a.assignment.startTime.compareTo(b.assignment.startTime),
-      );
-      groups.add(
-        _HistoryGroup(
-          eventId: eventId,
-          eventType: eventType,
-          date: date,
-          slots: slots,
-        ),
-      );
-    }
-
-    groups.sort((a, b) {
-      final dateCompare = b.date.compareTo(a.date);
-      if (dateCompare != 0) return dateCompare;
-      return a.eventId.compareTo(b.eventId);
-    });
-    return groups;
-  }
-
-  static List<Assignment> _templateFor(String eventType) {
-    switch (eventType) {
-      case 'alabanza':
-        return EventTemplates.alabanza();
-      case 'estudio':
-        return EventTemplates.estudio();
-      case 'ensenanza':
-        return EventTemplates.ensenanza();
-      default:
-        return [];
-    }
-  }
-
-  static DateTime? _dateFromId(String eventId) {
-    if (eventId.length < 10) return null;
-    return DateTime.tryParse(eventId.substring(0, 10));
-  }
-
-  static String? _eventTypeFromId(String eventId) {
-    if (eventId.length < 12) return null;
-    return eventId.substring(11);
-  }
-
-  static String _eventTypeLabel(String eventType) {
-    switch (eventType) {
-      case 'alabanza':
-        return 'Alabanza';
-      case 'estudio':
-        return 'Estudio';
-      case 'ensenanza':
-        return 'Enseñanza';
-      default:
-        return eventType;
-    }
-  }
-
-  static IconData _serviceTypeIcon(String serviceType) {
-    switch (serviceType) {
-      case ServiceTypes.vigilance:
-        return Icons.visibility;
-      case ServiceTypes.microphone:
-        return Icons.mic;
-      case ServiceTypes.accommodation:
-        return Icons.chair_alt;
-      case ServiceTypes.cleaning:
-        return Icons.cleaning_services;
-      case ServiceTypes.bookTable:
-        return Icons.menu_book;
-      case ServiceTypes.audiovisuals:
-        return Icons.cast_connected;
-      default:
-        return Icons.assignment_ind_outlined;
-    }
-  }
-
-  static T? _firstOrNull<T>(Iterable<T> values) {
-    for (final value in values) {
-      return value;
-    }
-    return null;
-  }
+  static String _eventTypeLabel(String eventType) => switch (eventType) {
+    'alabanza' => 'Alabanza',
+    'estudio' => 'Estudio',
+    'ensenanza' => 'Enseñanza',
+    _ => eventType,
+  };
 }
 
-class _HistoryGroup {
+class _HistoryRow {
   final String eventId;
   final String eventType;
   final DateTime date;
-  final List<_HistorySlot> slots;
+  final ServiceEvent? event;
 
-  const _HistoryGroup({
+  const _HistoryRow({
     required this.eventId,
     required this.eventType,
     required this.date,
-    required this.slots,
-  });
-}
-
-class _HistorySlot {
-  final Assignment assignment;
-  final String serviceType;
-  final ServiceEvent? event;
-
-  const _HistorySlot({
-    required this.assignment,
-    required this.serviceType,
     required this.event,
   });
 }

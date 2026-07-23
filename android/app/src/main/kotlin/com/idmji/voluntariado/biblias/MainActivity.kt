@@ -1,4 +1,4 @@
-package com.example.planilla_idmji
+package com.idmji.voluntariado.biblias
 
 import io.flutter.embedding.android.FlutterActivity
 
