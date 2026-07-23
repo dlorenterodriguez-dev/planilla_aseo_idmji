@@ -39,7 +39,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Alabanza · 21/07/2026'), findsOneWidget);
-    expect(find.text('1 puesto'), findsOneWidget);
+    expect(find.text('1 de 3 puestos registrados'), findsOneWidget);
     expect(find.text('Ana'), findsOneWidget);
     expect(find.text('Vigilancia · 18:00-19:00'), findsOneWidget);
   });
@@ -59,5 +59,23 @@ void main() {
       find.text('Todavía no hay servicios contabilizados'),
       findsOneWidget,
     );
+  });
+
+  testWidgets('shows every slot for a processed service without events',
+      (tester) async {
+    SharedPreferences.setMockInitialValues({
+      'volunteers_v2': <String>[],
+      'service_events_v1': <String>[],
+      'processed_services_v1': ['2026-07-21-alabanza'],
+    });
+
+    await tester.pumpWidget(
+      const MaterialApp(home: ServiceHistoryScreen()),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('Alabanza · 21/07/2026'), findsOneWidget);
+    expect(find.text('0 de 3 puestos registrados'), findsOneWidget);
+    expect(find.text('Sin registrar'), findsNWidgets(3));
   });
 }
