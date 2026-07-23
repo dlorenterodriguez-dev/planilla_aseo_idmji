@@ -62,7 +62,7 @@ class _PlanillaAppState extends State<PlanillaApp>
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      title: 'Planilla IDMJI',
+      title: 'IDMJI Voluntariado Vigilancia',
       localizationsDelegates: const [
         GlobalMaterialLocalizations.delegate,
         GlobalWidgetsLocalizations.delegate,
@@ -88,7 +88,7 @@ class HomePage extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Planilla IDMJI'),
+        title: const Text('IDMJI Voluntariado Vigilancia'),
       ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),

@@ -90,12 +90,12 @@ BEGIN
         BLOCK "040904e4"
         BEGIN
             VALUE "CompanyName", "com.example" "\0"
-            VALUE "FileDescription", "planilla_idmji" "\0"
+            VALUE "FileDescription", "IDMJI Vigilancia" "\0"
             VALUE "FileVersion", VERSION_AS_STRING "\0"
             VALUE "InternalName", "planilla_idmji" "\0"
             VALUE "LegalCopyright", "Copyright (C) 2026 com.example. All rights reserved." "\0"
             VALUE "OriginalFilename", "planilla_idmji.exe" "\0"
-            VALUE "ProductName", "planilla_idmji" "\0"
+            VALUE "ProductName", "IDMJI Voluntariado Vigilancia" "\0"
             VALUE "ProductVersion", VERSION_AS_STRING "\0"
         END
     END

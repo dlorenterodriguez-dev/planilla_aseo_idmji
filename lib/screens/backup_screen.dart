@@ -37,7 +37,8 @@ class _BackupScreenState extends State<BackupScreen> {
     await _runBusy(() async {
       final backupJson = await BackupService.createBackupJson();
       final now = DateTime.now();
-      final fileName = 'planilla_idmji_${DateFormat('yyyy-MM-dd').format(now)}.json';
+      final fileName =
+          'idmji_vigilancia_${DateFormat('yyyy-MM-dd').format(now)}.json';
       final file = XFile.fromData(
         Uint8List.fromList(utf8.encode(backupJson)),
         mimeType: 'application/json',
@@ -48,7 +49,7 @@ class _BackupScreenState extends State<BackupScreen> {
         ShareParams(
           files: [file],
           fileNameOverrides: [fileName],
-          subject: 'Copia de seguridad de Planilla IDMJI',
+          subject: 'Copia de seguridad de IDMJI Voluntariado Vigilancia',
         ),
       );
     });

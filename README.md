@@ -1,4 +1,4 @@
-# App Voluntariado IDMJI
+# IDMJI Voluntariado Vigilancia
 
 Aplicación Flutter para la gestión de voluntarios y asignaciones de la IDMJI.
 

@@ -1,6 +1,6 @@
 {
-    "name": "planilla_idmji",
-    "short_name": "planilla_idmji",
+    "name": "IDMJI Voluntariado Vigilancia",
+    "short_name": "IDMJI Vigilancia",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#0175C2",
