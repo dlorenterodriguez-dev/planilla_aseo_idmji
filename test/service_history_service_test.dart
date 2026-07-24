@@ -1,9 +1,9 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:planilla_biblias_idmji/models/assignment.dart';
-import 'package:planilla_biblias_idmji/services/assignment_storage_service.dart';
-import 'package:planilla_biblias_idmji/services/processed_services_storage.dart';
-import 'package:planilla_biblias_idmji/services/service_event_storage_service.dart';
-import 'package:planilla_biblias_idmji/services/service_history_service.dart';
+import 'package:planilla_aseo_idmji/models/assignment.dart';
+import 'package:planilla_aseo_idmji/services/assignment_storage_service.dart';
+import 'package:planilla_aseo_idmji/services/processed_services_storage.dart';
+import 'package:planilla_aseo_idmji/services/service_event_storage_service.dart';
+import 'package:planilla_aseo_idmji/services/service_history_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
@@ -16,7 +16,7 @@ void main() {
     () async {
       await AssignmentStorageService.saveAssignments([
         Assignment(
-          eventId: '2026-08-04-alabanza',
+          eventId: '2026-08-04-alabanza-1',
           eventType: 'alabanza',
           date: DateTime(2026, 8, 4),
           volunteerId: 'ana',
@@ -33,7 +33,7 @@ void main() {
       expect(await ServiceEventStorageService.loadEvents(), hasLength(1));
       expect(
         await ProcessedServicesStorage.loadProcessed(),
-        contains('2026-08-04-alabanza'),
+        contains('2026-08-04-alabanza-1'),
       );
     },
   );
@@ -41,7 +41,7 @@ void main() {
   test('no contabiliza antes de finalizar', () async {
     await AssignmentStorageService.saveAssignments([
       Assignment(
-        eventId: '2026-08-04-alabanza',
+        eventId: '2026-08-04-alabanza-1',
         eventType: 'alabanza',
         date: DateTime(2026, 8, 4),
         volunteerId: 'ana',

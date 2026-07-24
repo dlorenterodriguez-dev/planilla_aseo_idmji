@@ -1,11 +1,11 @@
 import 'dart:convert';
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:planilla_biblias_idmji/models/assignment.dart';
-import 'package:planilla_biblias_idmji/models/volunteer.dart';
-import 'package:planilla_biblias_idmji/services/assignment_storage_service.dart';
-import 'package:planilla_biblias_idmji/services/backup_service.dart';
-import 'package:planilla_biblias_idmji/services/volunteer_storage_service.dart';
+import 'package:planilla_aseo_idmji/models/assignment.dart';
+import 'package:planilla_aseo_idmji/models/volunteer.dart';
+import 'package:planilla_aseo_idmji/services/assignment_storage_service.dart';
+import 'package:planilla_aseo_idmji/services/backup_service.dart';
+import 'package:planilla_aseo_idmji/services/volunteer_storage_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
@@ -13,12 +13,12 @@ void main() {
     SharedPreferences.setMockInitialValues({});
   });
 
-  test('exporta y restaura todos los datos de Biblias', () async {
+  test('exporta y restaura todos los datos de Aseo', () async {
     const volunteer = Volunteer(id: 'ana', name: 'Ana');
     await VolunteerStorageService.saveVolunteers([volunteer]);
     await AssignmentStorageService.saveAssignments([
       Assignment(
-        eventId: '2026-08-04-alabanza',
+        eventId: '2026-08-04-alabanza-1',
         eventType: 'alabanza',
         date: DateTime(2026, 8, 4),
         volunteerId: volunteer.id,
@@ -37,7 +37,7 @@ void main() {
 
   test('rechaza copias de otra aplicación', () {
     final foreign = jsonEncode({
-      'applicationId': 'idmji-voluntariado-vigilancia',
+      'applicationId': 'idmji-voluntariado-biblias',
       'schemaVersion': 1,
     });
     expect(

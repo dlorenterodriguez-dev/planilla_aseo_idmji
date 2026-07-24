@@ -1,7 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:planilla_biblias_idmji/models/service_event.dart';
-import 'package:planilla_biblias_idmji/services/service_event_storage_service.dart';
-import 'package:planilla_biblias_idmji/services/service_history_correction_service.dart';
+import 'package:planilla_aseo_idmji/models/service_event.dart';
+import 'package:planilla_aseo_idmji/services/service_event_storage_service.dart';
+import 'package:planilla_aseo_idmji/services/service_history_correction_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
@@ -12,12 +12,12 @@ void main() {
       ServiceEvent(
         volunteerId: 'ana',
         eventType: 'alabanza',
-        eventId: '2026-08-04-alabanza',
+        eventId: '2026-08-04-alabanza-1',
         date: date,
       ),
     ]);
     await ServiceHistoryCorrectionService.correctAssignment(
-      eventId: '2026-08-04-alabanza',
+      eventId: '2026-08-04-alabanza-1',
       eventType: 'alabanza',
       date: date,
       volunteerId: 'bea',

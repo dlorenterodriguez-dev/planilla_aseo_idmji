@@ -7,16 +7,16 @@ import 'screens/volunteers_screen.dart';
 import 'screens/week_editor_screen.dart';
 import 'services/service_history_service.dart';
 
-void main() => runApp(const BibliasApp());
+void main() => runApp(const AseoApp());
 
-class BibliasApp extends StatefulWidget {
-  const BibliasApp({super.key});
+class AseoApp extends StatefulWidget {
+  const AseoApp({super.key});
 
   @override
-  State<BibliasApp> createState() => _BibliasAppState();
+  State<AseoApp> createState() => _AseoAppState();
 }
 
-class _BibliasAppState extends State<BibliasApp> with WidgetsBindingObserver {
+class _AseoAppState extends State<AseoApp> with WidgetsBindingObserver {
   var _processingHistory = false;
 
   @override
@@ -55,7 +55,7 @@ class _BibliasAppState extends State<BibliasApp> with WidgetsBindingObserver {
     const corporateBlue = Color(0xFF0E2A8B);
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      title: 'IDMJI Voluntariado Biblias',
+      title: 'IDMJI Voluntariado Aseo',
       localizationsDelegates: const [
         GlobalMaterialLocalizations.delegate,
         GlobalWidgetsLocalizations.delegate,
@@ -78,7 +78,7 @@ class HomePage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('IDMJI Voluntariado Biblias')),
+      appBar: AppBar(title: const Text('IDMJI Voluntariado Aseo')),
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [

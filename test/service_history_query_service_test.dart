@@ -1,7 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:planilla_biblias_idmji/models/service_event.dart';
-import 'package:planilla_biblias_idmji/services/service_event_storage_service.dart';
-import 'package:planilla_biblias_idmji/services/service_history_query_service.dart';
+import 'package:planilla_aseo_idmji/models/service_event.dart';
+import 'package:planilla_aseo_idmji/services/service_event_storage_service.dart';
+import 'package:planilla_aseo_idmji/services/service_history_query_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
@@ -11,13 +11,13 @@ void main() {
       ServiceEvent(
         volunteerId: 'ana',
         eventType: 'alabanza',
-        eventId: '2026-08-04-alabanza',
+        eventId: '2026-08-04-alabanza-1',
         date: DateTime(2026, 8, 4),
       ),
       ServiceEvent(
         volunteerId: 'ana',
         eventType: 'estudio',
-        eventId: '2026-08-08-estudio',
+        eventId: '2026-08-08-estudio-1',
         date: DateTime(2026, 8, 8),
       ),
     ]);

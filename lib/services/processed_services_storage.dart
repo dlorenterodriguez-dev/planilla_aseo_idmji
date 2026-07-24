@@ -1,7 +1,7 @@
 import 'package:shared_preferences/shared_preferences.dart';
 
 class ProcessedServicesStorage {
-  static const String storageKey = 'biblias_processed_services_v1';
+  static const String storageKey = 'aseo_processed_services_v1';
 
   static Future<Set<String>> loadProcessed() async {
     final prefs = await SharedPreferences.getInstance();

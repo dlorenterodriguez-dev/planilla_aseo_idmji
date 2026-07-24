@@ -1,6 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:planilla_biblias_idmji/models/absence_period.dart';
-import 'package:planilla_biblias_idmji/models/volunteer.dart';
+import 'package:planilla_aseo_idmji/models/absence_period.dart';
+import 'package:planilla_aseo_idmji/models/volunteer.dart';
 
 void main() {
   test(

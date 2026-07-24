@@ -3,25 +3,15 @@ import 'service_occurrence.dart';
 class EventTemplates {
   static List<ServiceOccurrence> forWeek(DateTime monday) {
     final start = DateTime(monday.year, monday.month, monday.day);
+    final services = [
+      (start.add(const Duration(days: 1)), 'alabanza', '18:00', '20:30'),
+      (start.add(const Duration(days: 5)), 'estudio', '16:00', '18:30'),
+      (start.add(const Duration(days: 6)), 'ensenanza', '16:00', '18:30'),
+    ];
     return [
-      _occurrence(
-        start.add(const Duration(days: 1)),
-        'alabanza',
-        '18:00',
-        '20:30',
-      ),
-      _occurrence(
-        start.add(const Duration(days: 5)),
-        'estudio',
-        '16:00',
-        '18:30',
-      ),
-      _occurrence(
-        start.add(const Duration(days: 6)),
-        'ensenanza',
-        '16:00',
-        '18:30',
-      ),
+      for (final service in services)
+        for (var position = 1; position <= 2; position++)
+          _occurrence(service.$1, service.$2, service.$3, service.$4, position),
     ];
   }
 
@@ -53,15 +43,17 @@ class EventTemplates {
     String type,
     String start,
     String end,
+    int position,
   ) {
     final month = date.month.toString().padLeft(2, '0');
     final day = date.day.toString().padLeft(2, '0');
     return ServiceOccurrence(
-      eventId: '${date.year}-$month-$day-$type',
+      eventId: '${date.year}-$month-$day-$type-$position',
       eventType: type,
       date: date,
       startTime: start,
       endTime: end,
+      position: position,
     );
   }
 }

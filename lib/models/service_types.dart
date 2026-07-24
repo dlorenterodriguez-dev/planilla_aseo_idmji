@@ -1,3 +1,3 @@
 class ServiceTypes {
-  static const String biblias = 'biblias';
+  static const String aseo = 'aseo';
 }

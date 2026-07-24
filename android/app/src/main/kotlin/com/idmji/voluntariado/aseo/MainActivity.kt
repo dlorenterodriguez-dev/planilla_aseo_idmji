@@ -1,4 +1,4 @@
-package com.idmji.voluntariado.biblias
+package com.idmji.voluntariado.aseo
 
 import io.flutter.embedding.android.FlutterActivity
 

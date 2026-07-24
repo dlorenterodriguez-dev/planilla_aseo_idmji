@@ -4,6 +4,7 @@ class ServiceOccurrence {
   final DateTime date;
   final String startTime;
   final String endTime;
+  final int position;
 
   const ServiceOccurrence({
     required this.eventId,
@@ -11,6 +12,7 @@ class ServiceOccurrence {
     required this.date,
     required this.startTime,
     required this.endTime,
+    required this.position,
   });
 
   String get label => switch (eventType) {
@@ -19,4 +21,6 @@ class ServiceOccurrence {
     'ensenanza' => 'Enseñanza',
     _ => eventType,
   };
+
+  String get positionLabel => 'Puesto $position';
 }

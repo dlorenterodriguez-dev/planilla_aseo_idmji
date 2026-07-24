@@ -5,7 +5,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../models/service_event.dart';
 
 class ServiceEventStorageService {
-  static const String storageKey = 'biblias_service_events_v1';
+  static const String storageKey = 'aseo_service_events_v1';
 
   static Future<List<ServiceEvent>> loadEvents() async {
     final prefs = await SharedPreferences.getInstance();

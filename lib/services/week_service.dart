@@ -1,7 +1,7 @@
 import 'package:shared_preferences/shared_preferences.dart';
 
 class WeekService {
-  static const String storageKey = 'biblias_week_start_v1';
+  static const String storageKey = 'aseo_week_start_v1';
 
   static Future<DateTime> loadWeekStart() async {
     final prefs = await SharedPreferences.getInstance();

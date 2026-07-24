@@ -28,9 +28,9 @@ class BackupSummary {
 }
 
 class BackupService {
-  static const String applicationId = 'idmji-voluntariado-biblias';
+  static const String applicationId = 'idmji-voluntariado-aseo';
   static const int schemaVersion = 1;
-  static const String _recoveryKey = 'biblias_backup_before_restore_v1';
+  static const String _recoveryKey = 'aseo_backup_before_restore_v1';
 
   static Future<String> createBackupJson() async {
     final data = {
@@ -112,7 +112,7 @@ class BackupService {
     final root = Map<String, dynamic>.from(decoded);
     if (root['applicationId'] != applicationId) {
       throw const FormatException(
-        'Esta copia no pertenece a IDMJI Voluntariado Biblias',
+        'Esta copia no pertenece a IDMJI Voluntariado Aseo',
       );
     }
     if (root['schemaVersion'] != schemaVersion) {

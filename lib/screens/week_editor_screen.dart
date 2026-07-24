@@ -96,6 +96,23 @@ class _WeekEditorScreenState extends State<WeekEditorScreen> {
       (current) => current.eventId == occurrence.eventId,
     );
     if (volunteerId != null && volunteerId.isNotEmpty) {
+      final alreadyAssigned = _allAssignments.any(
+        (current) =>
+            current.eventId != occurrence.eventId &&
+            current.eventType == occurrence.eventType &&
+            DateUtils.isSameDay(current.date, occurrence.date) &&
+            current.volunteerId == volunteerId,
+      );
+      if (alreadyAssigned) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text(
+              'Cada puesto del culto debe tener una voluntaria diferente',
+            ),
+          ),
+        );
+        return;
+      }
       final volunteer = _volunteers
           .where((candidate) => candidate.id == volunteerId)
           .firstOrNull;
@@ -172,7 +189,7 @@ class _WeekEditorScreenState extends State<WeekEditorScreen> {
       final suffix = widget.mode == ScheduleMode.week
           ? DateFormat('yyyy-MM-dd').format(_period)
           : DateFormat('yyyy-MM').format(_period);
-      final name = 'planilla_biblias_$suffix.png';
+      final name = 'planilla_aseo_$suffix.png';
       await SharePlus.instance.share(
         ShareParams(
           files: [
@@ -183,7 +200,7 @@ class _WeekEditorScreenState extends State<WeekEditorScreen> {
             ),
           ],
           fileNameOverrides: [name],
-          subject: 'Planilla de Biblias',
+          subject: 'Planilla de Aseo',
         ),
       );
     } catch (_) {
@@ -250,7 +267,7 @@ class _WeekEditorScreenState extends State<WeekEditorScreen> {
                         crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
                           const Text(
-                            'IDMJI · Voluntariado Biblias',
+                            'IDMJI · Voluntariado Aseo',
                             textAlign: TextAlign.center,
                             style: TextStyle(
                               color: Color(0xFF0E2A8B),
@@ -310,7 +327,7 @@ class _WeekEditorScreenState extends State<WeekEditorScreen> {
         decoration: InputDecoration(
           labelText:
               '${DateFormat('EEEE d', 'es_ES').format(occurrence.date)} · '
-              '${occurrence.label}',
+              '${occurrence.label} · ${occurrence.positionLabel}',
           border: const OutlineInputBorder(),
         ),
         items: [

@@ -5,7 +5,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../models/assignment.dart';
 
 class AssignmentStorageService {
-  static const String storageKey = 'biblias_assignments_v1';
+  static const String storageKey = 'aseo_assignments_v1';
 
   static Future<List<Assignment>> loadAssignments() async {
     final prefs = await SharedPreferences.getInstance();

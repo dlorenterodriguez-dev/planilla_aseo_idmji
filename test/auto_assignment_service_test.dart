@@ -1,11 +1,11 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:planilla_biblias_idmji/models/absence_period.dart';
-import 'package:planilla_biblias_idmji/models/assignment.dart';
-import 'package:planilla_biblias_idmji/models/event_templates.dart';
-import 'package:planilla_biblias_idmji/models/service_event.dart';
-import 'package:planilla_biblias_idmji/models/volunteer.dart';
-import 'package:planilla_biblias_idmji/services/auto_assignment_service.dart';
-import 'package:planilla_biblias_idmji/services/service_event_storage_service.dart';
+import 'package:planilla_aseo_idmji/models/absence_period.dart';
+import 'package:planilla_aseo_idmji/models/assignment.dart';
+import 'package:planilla_aseo_idmji/models/event_templates.dart';
+import 'package:planilla_aseo_idmji/models/service_event.dart';
+import 'package:planilla_aseo_idmji/models/volunteer.dart';
+import 'package:planilla_aseo_idmji/services/auto_assignment_service.dart';
+import 'package:planilla_aseo_idmji/services/service_event_storage_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
@@ -35,6 +35,13 @@ void main() {
             .length,
     };
     expect(assignments, hasLength(occurrences.length));
+    for (final date in occurrences.map((value) => value.date).toSet()) {
+      final assignedOnDate = assignments
+          .where((assignment) => assignment.date == date)
+          .map((assignment) => assignment.volunteerId)
+          .toList();
+      expect(assignedOnDate.toSet(), hasLength(assignedOnDate.length));
+    }
     expect(
       counts.values.reduce((a, b) => a > b ? a : b) -
           counts.values.reduce((a, b) => a < b ? a : b),
@@ -83,7 +90,7 @@ void main() {
     expect(
       assignments
           .where((assignment) => assignment.eventType == 'estudio')
-          .single
+          .first
           .volunteerId,
       'solo-estudio',
     );
@@ -91,6 +98,28 @@ void main() {
       assignments.any((assignment) => assignment.volunteerId == 'ausente'),
       isFalse,
     );
+  });
+
+  test('asigna dos voluntarias distintas en cada culto', () async {
+    final occurrences = EventTemplates.forWeek(DateTime(2026, 8, 3));
+    final assignments = <Assignment>[];
+
+    await AutoAssignmentService.autoAssign(
+      occurrences: occurrences,
+      assignments: assignments,
+      volunteers: const [
+        Volunteer(id: 'a', name: 'Ana'),
+        Volunteer(id: 'b', name: 'Beatriz'),
+      ],
+    );
+
+    expect(assignments, hasLength(6));
+    for (var index = 0; index < assignments.length; index += 2) {
+      expect(
+        assignments[index].volunteerId,
+        isNot(assignments[index + 1].volunteerId),
+      );
+    }
   });
 
   test('favorece a quien menos ha servido históricamente', () async {

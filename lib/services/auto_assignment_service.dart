@@ -43,7 +43,15 @@ class AutoAssignmentService {
       final candidates = volunteers
           .where(
             (volunteer) =>
-                volunteer.isAvailableFor(occurrence.eventType, occurrence.date),
+                volunteer.isAvailableFor(
+                  occurrence.eventType,
+                  occurrence.date,
+                ) &&
+                !_isAlreadyAssignedToService(
+                  volunteer.id,
+                  occurrence,
+                  assignments,
+                ),
           )
           .toList();
       if (candidates.isEmpty) continue;
@@ -93,4 +101,21 @@ class AutoAssignmentService {
     final monday = date.subtract(Duration(days: date.weekday - 1));
     return '${monday.year}-${monday.month}-${monday.day}';
   }
+
+  static bool _isAlreadyAssignedToService(
+    String volunteerId,
+    ServiceOccurrence occurrence,
+    List<Assignment> assignments,
+  ) {
+    return assignments.any(
+      (assignment) =>
+          assignment.eventId != occurrence.eventId &&
+          assignment.eventType == occurrence.eventType &&
+          _sameDay(assignment.date, occurrence.date) &&
+          assignment.volunteerId == volunteerId,
+    );
+  }
+
+  static bool _sameDay(DateTime a, DateTime b) =>
+      a.year == b.year && a.month == b.month && a.day == b.day;
 }

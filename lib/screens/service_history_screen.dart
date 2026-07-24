@@ -143,7 +143,7 @@ class _ServiceHistoryScreenState extends State<ServiceHistoryScreen> {
     final rows = _rows;
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Histórico de Biblias'),
+        title: const Text('Histórico de Aseo'),
         actions: [
           if (_canUndo)
             IconButton(
@@ -179,7 +179,8 @@ class _ServiceHistoryScreenState extends State<ServiceHistoryScreen> {
                                 : 'Voluntaria desconocida'),
                       ),
                       subtitle: Text(
-                        '${_eventTypeLabel(row.eventType)} · '
+                        '${_eventTypeLabel(row.eventType)}'
+                        '${_positionLabel(row.eventId)} · '
                         '${DateFormat('dd/MM/yyyy').format(row.date)}',
                       ),
                       trailing: const Icon(Icons.edit_outlined),
@@ -192,8 +193,15 @@ class _ServiceHistoryScreenState extends State<ServiceHistoryScreen> {
     );
   }
 
-  static String _eventTypeFromId(String eventId) =>
-      eventId.length > 11 ? eventId.substring(11) : '';
+  static String _eventTypeFromId(String eventId) {
+    if (eventId.length <= 11) return '';
+    return eventId.substring(11).replaceFirst(RegExp(r'-[12]$'), '');
+  }
+
+  static String _positionLabel(String eventId) {
+    final match = RegExp(r'-([12])$').firstMatch(eventId);
+    return match == null ? ' · ' : ' · Puesto ${match.group(1)} · ';
+  }
 
   static String _eventTypeLabel(String eventType) => switch (eventType) {
     'alabanza' => 'Alabanza',

@@ -6,7 +6,7 @@ import '../models/service_event.dart';
 import 'service_event_storage_service.dart';
 
 class ServiceHistoryCorrectionService {
-  static const String undoKey = 'biblias_history_undo_v1';
+  static const String undoKey = 'aseo_history_undo_v1';
 
   static Future<void> correctAssignment({
     required String eventId,

@@ -89,7 +89,7 @@ class _VolunteersScreenState extends State<VolunteersScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Voluntarias de Biblias')),
+      appBar: AppBar(title: const Text('Voluntarias de Aseo')),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () => _editVolunteer(),
         icon: const Icon(Icons.person_add_alt_1),
