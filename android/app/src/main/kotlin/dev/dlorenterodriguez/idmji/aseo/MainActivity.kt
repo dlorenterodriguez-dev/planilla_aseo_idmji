@@ -1,4 +1,4 @@
-package com.idmji.voluntariado.aseo
+package dev.dlorenterodriguez.idmji.aseo
 
 import io.flutter.embedding.android.FlutterActivity
 
