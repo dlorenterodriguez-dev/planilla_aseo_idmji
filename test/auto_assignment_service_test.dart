@@ -100,7 +100,7 @@ void main() {
     );
   });
 
-  test('asigna dos voluntarias distintas en cada culto', () async {
+  test('asigna voluntarias distintas a los puestos simultáneos', () async {
     final occurrences = EventTemplates.forWeek(DateTime(2026, 8, 3));
     final assignments = <Assignment>[];
 
@@ -110,15 +110,43 @@ void main() {
       volunteers: const [
         Volunteer(id: 'a', name: 'Ana'),
         Volunteer(id: 'b', name: 'Beatriz'),
+        Volunteer(id: 'c', name: 'Carmen'),
       ],
     );
 
     expect(assignments, hasLength(6));
-    for (var index = 0; index < assignments.length; index += 2) {
-      expect(
-        assignments[index].volunteerId,
-        isNot(assignments[index + 1].volunteerId),
-      );
+    for (final date in occurrences.map((value) => value.date).toSet()) {
+      final ids = assignments
+          .where((assignment) => assignment.date == date)
+          .map((assignment) => assignment.volunteerId)
+          .toList();
+      expect(ids, everyElement(isNotNull));
+      expect(ids.toSet(), hasLength(ids.length));
+    }
+  });
+
+  test('respeta las capacidades de sala y baños', () async {
+    final occurrences = EventTemplates.forWeek(DateTime(2026, 8, 3));
+    final assignments = <Assignment>[];
+
+    await AutoAssignmentService.autoAssign(
+      occurrences: occurrences,
+      assignments: assignments,
+      volunteers: const [
+        Volunteer(id: 'sala', name: 'Sala', canCleanBathrooms: false),
+        Volunteer(id: 'banos', name: 'Baños', canCleanWorshipHall: false),
+        Volunteer(id: 'ambos', name: 'Ambos'),
+      ],
+    );
+
+    final byId = {for (final value in occurrences) value.eventId: value};
+    for (final assignment in assignments) {
+      final area = byId[assignment.eventId]!.cleaningArea;
+      if (area == 'sala') {
+        expect(assignment.volunteerId, isNot('banos'));
+      } else {
+        expect(assignment.volunteerId, isNot('sala'));
+      }
     }
   });
 

@@ -12,12 +12,12 @@ void main() {
       ServiceEvent(
         volunteerId: 'ana',
         eventType: 'alabanza',
-        eventId: '2026-08-04-alabanza-1',
+        eventId: '2026-08-04-alabanza-sala-1',
         date: date,
       ),
     ]);
     await ServiceHistoryCorrectionService.correctAssignment(
-      eventId: '2026-08-04-alabanza-1',
+      eventId: '2026-08-04-alabanza-sala-1',
       eventType: 'alabanza',
       date: date,
       volunteerId: 'bea',

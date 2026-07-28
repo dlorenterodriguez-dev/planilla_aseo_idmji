@@ -11,13 +11,13 @@ void main() {
       ServiceEvent(
         volunteerId: 'ana',
         eventType: 'alabanza',
-        eventId: '2026-08-04-alabanza-1',
+        eventId: '2026-08-04-alabanza-sala-1',
         date: DateTime(2026, 8, 4),
       ),
       ServiceEvent(
         volunteerId: 'ana',
         eventType: 'estudio',
-        eventId: '2026-08-08-estudio-1',
+        eventId: '2026-08-08-estudio-sala-1',
         date: DateTime(2026, 8, 8),
       ),
     ]);

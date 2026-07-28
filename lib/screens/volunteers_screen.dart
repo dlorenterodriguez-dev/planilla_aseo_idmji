@@ -159,10 +159,16 @@ class _VolunteersScreenState extends State<VolunteersScreen> {
       if (volunteer.availableEnsenanza) 'Enseñanza',
     ];
     final base = cultos.isEmpty ? 'Sin cultos disponibles' : cultos.join(', ');
+    final areas = <String>[
+      if (volunteer.canCleanWorshipHall) 'sala',
+      if (volunteer.canCleanBathrooms) 'baños',
+    ];
+    final areaLabel = areas.isEmpty ? 'sin puestos' : areas.join(' y ');
     final absences = volunteer.absences.length;
     return absences == 0
-        ? base
-        : '$base · $absences ${absences == 1 ? 'ausencia' : 'ausencias'}';
+        ? '$base · $areaLabel'
+        : '$base · $areaLabel · '
+              '$absences ${absences == 1 ? 'ausencia' : 'ausencias'}';
   }
 }
 
@@ -182,6 +188,8 @@ class _VolunteerDialogState extends State<_VolunteerDialog> {
   late bool _alabanza;
   late bool _estudio;
   late bool _ensenanza;
+  late bool _canCleanWorshipHall;
+  late bool _canCleanBathrooms;
   late List<AbsencePeriod> _absences;
 
   @override
@@ -193,6 +201,8 @@ class _VolunteerDialogState extends State<_VolunteerDialog> {
     _alabanza = volunteer?.availableAlabanza ?? true;
     _estudio = volunteer?.availableEstudio ?? true;
     _ensenanza = volunteer?.availableEnsenanza ?? true;
+    _canCleanWorshipHall = volunteer?.canCleanWorshipHall ?? true;
+    _canCleanBathrooms = volunteer?.canCleanBathrooms ?? true;
     _absences = List.of(volunteer?.absences ?? const []);
   }
 
@@ -234,6 +244,8 @@ class _VolunteerDialogState extends State<_VolunteerDialog> {
         availableAlabanza: _alabanza,
         availableEstudio: _estudio,
         availableEnsenanza: _ensenanza,
+        canCleanWorshipHall: _canCleanWorshipHall,
+        canCleanBathrooms: _canCleanBathrooms,
         absences: _absences,
       ),
     );
@@ -296,6 +308,25 @@ class _VolunteerDialogState extends State<_VolunteerDialog> {
                   value: _ensenanza,
                   onChanged: (value) =>
                       setState(() => _ensenanza = value ?? false),
+                ),
+                const Divider(),
+                Text(
+                  'Puestos que puede realizar',
+                  style: Theme.of(context).textTheme.titleSmall,
+                ),
+                CheckboxListTile(
+                  contentPadding: EdgeInsets.zero,
+                  title: const Text('Aseo de sala de culto'),
+                  value: _canCleanWorshipHall,
+                  onChanged: (value) =>
+                      setState(() => _canCleanWorshipHall = value ?? false),
+                ),
+                CheckboxListTile(
+                  contentPadding: EdgeInsets.zero,
+                  title: const Text('Aseo de baños'),
+                  value: _canCleanBathrooms,
+                  onChanged: (value) =>
+                      setState(() => _canCleanBathrooms = value ?? false),
                 ),
                 const Divider(),
                 Row(

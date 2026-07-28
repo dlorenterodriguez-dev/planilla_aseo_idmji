@@ -117,7 +117,11 @@ class _WeekEditorScreenState extends State<WeekEditorScreen> {
           .where((candidate) => candidate.id == volunteerId)
           .firstOrNull;
       if (volunteer != null &&
-          !volunteer.isAvailableFor(occurrence.eventType, occurrence.date)) {
+          !volunteer.isAvailableFor(
+            occurrence.eventType,
+            occurrence.date,
+            cleaningArea: occurrence.cleaningArea,
+          )) {
         final proceed = await showDialog<bool>(
           context: context,
           builder: (context) => AlertDialog(
@@ -336,7 +340,11 @@ class _WeekEditorScreenState extends State<WeekEditorScreen> {
             (volunteer) => DropdownMenuItem(
               value: volunteer.id,
               child: Text(
-                volunteer.isAvailableFor(occurrence.eventType, occurrence.date)
+                volunteer.isAvailableFor(
+                      occurrence.eventType,
+                      occurrence.date,
+                      cleaningArea: occurrence.cleaningArea,
+                    )
                     ? volunteer.name
                     : '${volunteer.name} · no disponible',
               ),

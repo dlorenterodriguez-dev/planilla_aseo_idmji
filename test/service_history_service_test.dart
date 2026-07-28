@@ -16,7 +16,7 @@ void main() {
     () async {
       await AssignmentStorageService.saveAssignments([
         Assignment(
-          eventId: '2026-08-04-alabanza-1',
+          eventId: '2026-08-04-alabanza-sala-1',
           eventType: 'alabanza',
           date: DateTime(2026, 8, 4),
           volunteerId: 'ana',
@@ -33,7 +33,7 @@ void main() {
       expect(await ServiceEventStorageService.loadEvents(), hasLength(1));
       expect(
         await ProcessedServicesStorage.loadProcessed(),
-        contains('2026-08-04-alabanza-1'),
+        contains('2026-08-04-alabanza-sala-1'),
       );
     },
   );
@@ -41,7 +41,7 @@ void main() {
   test('no contabiliza antes de finalizar', () async {
     await AssignmentStorageService.saveAssignments([
       Assignment(
-        eventId: '2026-08-04-alabanza-1',
+        eventId: '2026-08-04-alabanza-sala-1',
         eventType: 'alabanza',
         date: DateTime(2026, 8, 4),
         volunteerId: 'ana',

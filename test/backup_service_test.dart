@@ -18,7 +18,7 @@ void main() {
     await VolunteerStorageService.saveVolunteers([volunteer]);
     await AssignmentStorageService.saveAssignments([
       Assignment(
-        eventId: '2026-08-04-alabanza-1',
+        eventId: '2026-08-04-alabanza-sala-1',
         eventType: 'alabanza',
         date: DateTime(2026, 8, 4),
         volunteerId: volunteer.id,

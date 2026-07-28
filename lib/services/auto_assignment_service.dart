@@ -46,6 +46,7 @@ class AutoAssignmentService {
                 volunteer.isAvailableFor(
                   occurrence.eventType,
                   occurrence.date,
+                  cleaningArea: occurrence.cleaningArea,
                 ) &&
                 !_isAlreadyAssignedToService(
                   volunteer.id,

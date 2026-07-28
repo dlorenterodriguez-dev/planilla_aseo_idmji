@@ -195,12 +195,17 @@ class _ServiceHistoryScreenState extends State<ServiceHistoryScreen> {
 
   static String _eventTypeFromId(String eventId) {
     if (eventId.length <= 11) return '';
-    return eventId.substring(11).replaceFirst(RegExp(r'-[12]$'), '');
+    return eventId
+        .substring(11)
+        .replaceFirst(RegExp(r'-(sala|banos)-\d+$'), '');
   }
 
   static String _positionLabel(String eventId) {
-    final match = RegExp(r'-([12])$').firstMatch(eventId);
-    return match == null ? ' · ' : ' · Puesto ${match.group(1)} · ';
+    final match = RegExp(r'-(sala|banos)-(\d+)$').firstMatch(eventId);
+    if (match == null) return ' · ';
+    return match.group(1) == 'sala'
+        ? ' · Sala ${match.group(2)} · '
+        : ' · Baños · ';
   }
 
   static String _eventTypeLabel(String eventType) => switch (eventType) {
