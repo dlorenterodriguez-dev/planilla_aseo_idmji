@@ -261,6 +261,26 @@ class _WeekEditorScreenState extends State<WeekEditorScreen> {
                   ],
                 ),
                 const SizedBox(height: 12),
+                FilledButton.icon(
+                  onPressed: _busy || _volunteers.isEmpty ? null : _autoAssign,
+                  icon: const Icon(Icons.auto_awesome),
+                  label: const Text('Autoasignar'),
+                ),
+                const SizedBox(height: 10),
+                OutlinedButton.icon(
+                  onPressed: _busy ? null : _sharePlan,
+                  icon: const Icon(Icons.share),
+                  label: const Text('Compartir como imagen'),
+                ),
+                if (_volunteers.isEmpty)
+                  const Padding(
+                    padding: EdgeInsets.only(top: 12),
+                    child: Text(
+                      'Añade voluntarias antes de realizar asignaciones.',
+                      textAlign: TextAlign.center,
+                    ),
+                  ),
+                const SizedBox(height: 16),
                 RepaintBoundary(
                   key: _previewKey,
                   child: ColoredBox(
@@ -292,26 +312,6 @@ class _WeekEditorScreenState extends State<WeekEditorScreen> {
                     ),
                   ),
                 ),
-                const SizedBox(height: 16),
-                FilledButton.icon(
-                  onPressed: _busy || _volunteers.isEmpty ? null : _autoAssign,
-                  icon: const Icon(Icons.auto_awesome),
-                  label: const Text('Autoasignar'),
-                ),
-                const SizedBox(height: 10),
-                OutlinedButton.icon(
-                  onPressed: _busy ? null : _sharePlan,
-                  icon: const Icon(Icons.share),
-                  label: const Text('Compartir como imagen'),
-                ),
-                if (_volunteers.isEmpty)
-                  const Padding(
-                    padding: EdgeInsets.only(top: 12),
-                    child: Text(
-                      'Añade voluntarias antes de realizar asignaciones.',
-                      textAlign: TextAlign.center,
-                    ),
-                  ),
               ],
             ),
     );
