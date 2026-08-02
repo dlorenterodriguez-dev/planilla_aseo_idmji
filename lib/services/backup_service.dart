@@ -144,6 +144,19 @@ class BackupService {
         throw const FormatException('Hay voluntarias duplicadas');
       }
     }
+    final volunteersById = {
+      for (final volunteer in volunteers) volunteer.id: volunteer,
+    };
+    for (final volunteer in volunteers) {
+      final partnerId = volunteer.partnerId;
+      if (partnerId == null) continue;
+      if (partnerId == volunteer.id ||
+          volunteersById[partnerId]?.partnerId != volunteer.id) {
+        throw const FormatException(
+          'Hay una pareja de voluntarios incompleta o no válida',
+        );
+      }
+    }
     final eventIds = <String>{};
     for (final assignment in assignments) {
       if (assignment.eventId.isEmpty || !eventIds.add(assignment.eventId)) {

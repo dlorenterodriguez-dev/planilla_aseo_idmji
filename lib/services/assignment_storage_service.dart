@@ -46,4 +46,20 @@ class AssignmentStorageService {
     }
     await saveAssignments(assignments);
   }
+
+  static Future<void> removeObsoleteFutureAssignments({DateTime? now}) async {
+    final assignments = await loadAssignments();
+    final todayValue = now ?? DateTime.now();
+    final today = DateTime(todayValue.year, todayValue.month, todayValue.day);
+    final originalLength = assignments.length;
+    assignments.removeWhere(
+      (assignment) =>
+          !assignment.date.isBefore(today) &&
+          (assignment.eventId.endsWith('-alabanza-sala-2') ||
+              assignment.eventId.contains('-banos-')),
+    );
+    if (assignments.length != originalLength) {
+      await saveAssignments(assignments);
+    }
+  }
 }

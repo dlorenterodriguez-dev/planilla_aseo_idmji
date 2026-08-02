@@ -13,14 +13,6 @@ class EventTemplates {
         1,
       ),
       _occurrence(
-        start.add(const Duration(days: 1)),
-        'alabanza',
-        '20:30',
-        '21:00',
-        'sala',
-        2,
-      ),
-      _occurrence(
         start.add(const Duration(days: 5)),
         'estudio',
         '18:30',
@@ -35,22 +27,6 @@ class EventTemplates {
         '19:00',
         'sala',
         2,
-      ),
-      _occurrence(
-        start.add(const Duration(days: 5)),
-        'estudio',
-        '18:30',
-        '19:00',
-        'banos',
-        1,
-      ),
-      _occurrence(
-        start.add(const Duration(days: 6)),
-        'ensenanza',
-        '18:30',
-        '19:00',
-        'banos',
-        1,
       ),
     ];
   }

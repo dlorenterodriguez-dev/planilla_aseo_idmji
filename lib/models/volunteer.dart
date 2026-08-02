@@ -7,8 +7,7 @@ class Volunteer {
   final bool availableAlabanza;
   final bool availableEstudio;
   final bool availableEnsenanza;
-  final bool canCleanWorshipHall;
-  final bool canCleanBathrooms;
+  final String? partnerId;
   final List<AbsencePeriod> absences;
 
   const Volunteer({
@@ -18,8 +17,7 @@ class Volunteer {
     this.availableAlabanza = true,
     this.availableEstudio = true,
     this.availableEnsenanza = true,
-    this.canCleanWorshipHall = true,
-    this.canCleanBathrooms = true,
+    this.partnerId,
     this.absences = const [],
   });
 
@@ -30,14 +28,8 @@ class Volunteer {
       'ensenanza' => availableEnsenanza,
       _ => false,
     };
-    final availableForArea = switch (cleaningArea) {
-      'sala' => canCleanWorshipHall,
-      'banos' => canCleanBathrooms,
-      _ => true,
-    };
     return isActive &&
         availableForCulto &&
-        availableForArea &&
         !absences.any((absence) => absence.includes(date));
   }
 
@@ -47,8 +39,8 @@ class Volunteer {
     bool? availableAlabanza,
     bool? availableEstudio,
     bool? availableEnsenanza,
-    bool? canCleanWorshipHall,
-    bool? canCleanBathrooms,
+    String? partnerId,
+    bool clearPartner = false,
     List<AbsencePeriod>? absences,
   }) {
     return Volunteer(
@@ -58,8 +50,7 @@ class Volunteer {
       availableAlabanza: availableAlabanza ?? this.availableAlabanza,
       availableEstudio: availableEstudio ?? this.availableEstudio,
       availableEnsenanza: availableEnsenanza ?? this.availableEnsenanza,
-      canCleanWorshipHall: canCleanWorshipHall ?? this.canCleanWorshipHall,
-      canCleanBathrooms: canCleanBathrooms ?? this.canCleanBathrooms,
+      partnerId: clearPartner ? null : partnerId ?? this.partnerId,
       absences: absences ?? this.absences,
     );
   }
@@ -71,8 +62,7 @@ class Volunteer {
     'availableAlabanza': availableAlabanza,
     'availableEstudio': availableEstudio,
     'availableEnsenanza': availableEnsenanza,
-    'canCleanWorshipHall': canCleanWorshipHall,
-    'canCleanBathrooms': canCleanBathrooms,
+    'partnerId': partnerId,
     'absences': absences.map((absence) => absence.toJson()).toList(),
   };
 
@@ -84,8 +74,7 @@ class Volunteer {
       availableAlabanza: json['availableAlabanza'] as bool? ?? true,
       availableEstudio: json['availableEstudio'] as bool? ?? true,
       availableEnsenanza: json['availableEnsenanza'] as bool? ?? true,
-      canCleanWorshipHall: json['canCleanWorshipHall'] as bool? ?? true,
-      canCleanBathrooms: json['canCleanBathrooms'] as bool? ?? true,
+      partnerId: json['partnerId'] as String?,
       absences: (json['absences'] as List<dynamic>? ?? const [])
           .map(
             (value) =>

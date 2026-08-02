@@ -31,4 +31,13 @@ void main() {
       );
     },
   );
+
+  test('conserva la pareja al serializar y admite datos antiguos', () {
+    const volunteer = Volunteer(id: 'ana', name: 'Ana', partnerId: 'luis');
+    expect(Volunteer.fromJson(volunteer.toJson()).partnerId, 'luis');
+    expect(
+      Volunteer.fromJson({'id': 'old', 'name': 'Antigua'}).partnerId,
+      isNull,
+    );
+  });
 }

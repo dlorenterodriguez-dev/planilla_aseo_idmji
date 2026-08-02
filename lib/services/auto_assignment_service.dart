@@ -28,6 +28,9 @@ class AutoAssignmentService {
 
     final ordered = List<ServiceOccurrence>.of(occurrences)
       ..sort((a, b) => a.date.compareTo(b.date));
+    final volunteersById = {
+      for (final volunteer in volunteers) volunteer.id: volunteer,
+    };
     for (final occurrence in ordered) {
       final assignment = assignmentsById.putIfAbsent(occurrence.eventId, () {
         final created = Assignment(
@@ -39,6 +42,55 @@ class AutoAssignmentService {
         return created;
       });
       if (assignment.volunteerId?.isNotEmpty ?? false) continue;
+
+      final sameService = ordered
+          .where(
+            (other) =>
+                other.eventType == occurrence.eventType &&
+                _sameDay(other.date, occurrence.date),
+          )
+          .toList();
+      final assignedPartner = sameService
+          .map((other) => assignmentsById[other.eventId]?.volunteerId)
+          .whereType<String>()
+          .map((id) => volunteersById[id])
+          .whereType<Volunteer>()
+          .where((volunteer) => volunteer.partnerId != null)
+          .where((volunteer) => volunteer.partnerId != volunteer.id)
+          .where((volunteer) => volunteer.partnerId != null)
+          .where(
+            (volunteer) =>
+                volunteersById[volunteer.partnerId!]?.partnerId == volunteer.id,
+          )
+          .firstOrNull;
+      if (sameService.length == 2 &&
+          assignedPartner != null &&
+          assignedPartner.partnerId != null) {
+        final partner = volunteersById[assignedPartner.partnerId!];
+        if (partner != null &&
+            partner.isAvailableFor(
+              occurrence.eventType,
+              occurrence.date,
+              cleaningArea: occurrence.cleaningArea,
+            )) {
+          assignment.volunteerId = partner.id;
+          _incrementCounts(
+            partner.id,
+            occurrence.date,
+            periodCounts,
+            weeklyCounts,
+          );
+          continue;
+        }
+      }
+
+      final emptySlots = sameService
+          .where(
+            (other) =>
+                !(assignmentsById[other.eventId]?.volunteerId?.isNotEmpty ??
+                    false),
+          )
+          .length;
 
       final candidates = volunteers
           .where(
@@ -52,6 +104,12 @@ class AutoAssignmentService {
                   volunteer.id,
                   occurrence,
                   assignments,
+                ) &&
+                _canEnterAsUnit(
+                  volunteer,
+                  occurrence,
+                  emptySlots,
+                  volunteersById,
                 ),
           )
           .toList();
@@ -93,9 +151,71 @@ class AutoAssignmentService {
 
       final selected = candidates.first;
       assignment.volunteerId = selected.id;
-      periodCounts.update(selected.id, (count) => count + 1, ifAbsent: () => 1);
-      weekCounts.update(selected.id, (count) => count + 1, ifAbsent: () => 1);
+      _incrementCounts(
+        selected.id,
+        occurrence.date,
+        periodCounts,
+        weeklyCounts,
+      );
+
+      final partnerId = selected.partnerId;
+      if (partnerId != null && emptySlots >= 2) {
+        final partnerOccurrence = sameService.firstWhere(
+          (other) => other.eventId != occurrence.eventId,
+        );
+        final partnerAssignment = assignmentsById.putIfAbsent(
+          partnerOccurrence.eventId,
+          () {
+            final created = Assignment(
+              eventId: partnerOccurrence.eventId,
+              eventType: partnerOccurrence.eventType,
+              date: partnerOccurrence.date,
+            );
+            assignments.add(created);
+            return created;
+          },
+        );
+        partnerAssignment.volunteerId = partnerId;
+        _incrementCounts(
+          partnerId,
+          partnerOccurrence.date,
+          periodCounts,
+          weeklyCounts,
+        );
+      }
     }
+  }
+
+  static bool _canEnterAsUnit(
+    Volunteer volunteer,
+    ServiceOccurrence occurrence,
+    int emptySlots,
+    Map<String, Volunteer> volunteersById,
+  ) {
+    final partnerId = volunteer.partnerId;
+    if (partnerId == null) return true;
+    if (occurrence.eventType != 'estudio' || emptySlots < 2) return false;
+    final partner = volunteersById[partnerId];
+    return partner != null &&
+        partner.partnerId == volunteer.id &&
+        volunteer.id.compareTo(partner.id) < 0 &&
+        partner.isAvailableFor(
+          occurrence.eventType,
+          occurrence.date,
+          cleaningArea: occurrence.cleaningArea,
+        );
+  }
+
+  static void _incrementCounts(
+    String volunteerId,
+    DateTime date,
+    Map<String, int> periodCounts,
+    Map<String, Map<String, int>> weeklyCounts,
+  ) {
+    periodCounts.update(volunteerId, (count) => count + 1, ifAbsent: () => 1);
+    weeklyCounts
+        .putIfAbsent(_weekKey(date), () => {})
+        .update(volunteerId, (count) => count + 1, ifAbsent: () => 1);
   }
 
   static String _weekKey(DateTime date) {

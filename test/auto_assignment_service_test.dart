@@ -114,7 +114,7 @@ void main() {
       ],
     );
 
-    expect(assignments, hasLength(6));
+    expect(assignments, hasLength(3));
     for (final date in occurrences.map((value) => value.date).toSet()) {
       final ids = assignments
           .where((assignment) => assignment.date == date)
@@ -125,7 +125,7 @@ void main() {
     }
   });
 
-  test('respeta las capacidades de sala y baños', () async {
+  test('asigna una pareja junta el sábado y no la usa el martes', () async {
     final occurrences = EventTemplates.forWeek(DateTime(2026, 8, 3));
     final assignments = <Assignment>[];
 
@@ -133,21 +133,21 @@ void main() {
       occurrences: occurrences,
       assignments: assignments,
       volunteers: const [
-        Volunteer(id: 'sala', name: 'Sala', canCleanBathrooms: false),
-        Volunteer(id: 'banos', name: 'Baños', canCleanWorshipHall: false),
-        Volunteer(id: 'ambos', name: 'Ambos'),
+        Volunteer(id: 'a', name: 'Ana', partnerId: 'b'),
+        Volunteer(id: 'b', name: 'Beto', partnerId: 'a'),
+        Volunteer(id: 'c', name: 'Carmen'),
       ],
     );
 
-    final byId = {for (final value in occurrences) value.eventId: value};
-    for (final assignment in assignments) {
-      final area = byId[assignment.eventId]!.cleaningArea;
-      if (area == 'sala') {
-        expect(assignment.volunteerId, isNot('banos'));
-      } else {
-        expect(assignment.volunteerId, isNot('sala'));
-      }
-    }
+    final tuesday = assignments.singleWhere(
+      (assignment) => assignment.eventType == 'alabanza',
+    );
+    expect(tuesday.volunteerId, 'c');
+    final saturdayIds = assignments
+        .where((assignment) => assignment.eventType == 'estudio')
+        .map((assignment) => assignment.volunteerId)
+        .toSet();
+    expect(saturdayIds, {'a', 'b'});
   });
 
   test('favorece a quien menos ha servido históricamente', () async {

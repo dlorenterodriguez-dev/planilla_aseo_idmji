@@ -42,17 +42,58 @@ class _VolunteersScreenState extends State<VolunteersScreen> {
   Future<void> _editVolunteer([Volunteer? volunteer]) async {
     final result = await showDialog<Volunteer>(
       context: context,
-      builder: (_) => _VolunteerDialog(volunteer: volunteer),
+      builder: (_) =>
+          _VolunteerDialog(volunteer: volunteer, volunteers: _volunteers),
     );
     if (result == null) return;
+    final previousPartnerId = volunteer?.partnerId;
     final index = _volunteers.indexWhere((current) => current.id == result.id);
     if (index < 0) {
       _volunteers.add(result);
     } else {
       _volunteers[index] = result;
     }
+    _synchronizePartner(result.id, previousPartnerId, result.partnerId);
     await VolunteerStorageService.saveVolunteers(_volunteers);
     await _load();
+  }
+
+  void _synchronizePartner(
+    String volunteerId,
+    String? previousPartnerId,
+    String? partnerId,
+  ) {
+    if (previousPartnerId != null && previousPartnerId != partnerId) {
+      final previousIndex = _volunteers.indexWhere(
+        (volunteer) => volunteer.id == previousPartnerId,
+      );
+      if (previousIndex >= 0 &&
+          _volunteers[previousIndex].partnerId == volunteerId) {
+        _volunteers[previousIndex] = _volunteers[previousIndex].copyWith(
+          clearPartner: true,
+        );
+      }
+    }
+    if (partnerId == null) return;
+    final partnerIndex = _volunteers.indexWhere(
+      (volunteer) => volunteer.id == partnerId,
+    );
+    if (partnerIndex < 0) return;
+    final displacedId = _volunteers[partnerIndex].partnerId;
+    if (displacedId != null && displacedId != volunteerId) {
+      final displacedIndex = _volunteers.indexWhere(
+        (volunteer) => volunteer.id == displacedId,
+      );
+      if (displacedIndex >= 0 &&
+          _volunteers[displacedIndex].partnerId == partnerId) {
+        _volunteers[displacedIndex] = _volunteers[displacedIndex].copyWith(
+          clearPartner: true,
+        );
+      }
+    }
+    _volunteers[partnerIndex] = _volunteers[partnerIndex].copyWith(
+      partnerId: volunteerId,
+    );
   }
 
   Future<void> _deleteVolunteer(Volunteer volunteer) async {
@@ -81,6 +122,14 @@ class _VolunteersScreenState extends State<VolunteersScreen> {
     );
     if (confirmed != true) return;
     await AssignmentStorageService.removeVolunteerFromAssignments(volunteer.id);
+    final partnerIndex = _volunteers.indexWhere(
+      (current) => current.id == volunteer.partnerId,
+    );
+    if (partnerIndex >= 0) {
+      _volunteers[partnerIndex] = _volunteers[partnerIndex].copyWith(
+        clearPartner: true,
+      );
+    }
     _volunteers.removeWhere((current) => current.id == volunteer.id);
     await VolunteerStorageService.saveVolunteers(_volunteers);
     if (mounted) setState(() {});
@@ -131,7 +180,7 @@ class _VolunteersScreenState extends State<VolunteersScreen> {
                     subtitle: Text(
                       '${stats?.total ?? 0} servicios · '
                       'Último: ${last == null ? 'nunca' : DateFormat('dd/MM/yyyy').format(last)}\n'
-                      '${_availabilityLabel(volunteer)}',
+                      '${_availabilityLabel(volunteer, _volunteers)}',
                     ),
                     isThreeLine: true,
                     onTap: () => _editVolunteer(volunteer),
@@ -152,30 +201,33 @@ class _VolunteersScreenState extends State<VolunteersScreen> {
     );
   }
 
-  static String _availabilityLabel(Volunteer volunteer) {
+  static String _availabilityLabel(
+    Volunteer volunteer,
+    List<Volunteer> volunteers,
+  ) {
     final cultos = <String>[
       if (volunteer.availableAlabanza) 'Alabanza',
       if (volunteer.availableEstudio) 'Estudio',
       if (volunteer.availableEnsenanza) 'Enseñanza',
     ];
     final base = cultos.isEmpty ? 'Sin cultos disponibles' : cultos.join(', ');
-    final areas = <String>[
-      if (volunteer.canCleanWorshipHall) 'sala',
-      if (volunteer.canCleanBathrooms) 'baños',
-    ];
-    final areaLabel = areas.isEmpty ? 'sin puestos' : areas.join(' y ');
+    final partner = volunteers
+        .where((candidate) => candidate.id == volunteer.partnerId)
+        .firstOrNull;
+    final partnerLabel = partner == null ? '' : ' · Pareja: ${partner.name}';
     final absences = volunteer.absences.length;
     return absences == 0
-        ? '$base · $areaLabel'
-        : '$base · $areaLabel · '
+        ? '$base$partnerLabel'
+        : '$base$partnerLabel · '
               '$absences ${absences == 1 ? 'ausencia' : 'ausencias'}';
   }
 }
 
 class _VolunteerDialog extends StatefulWidget {
   final Volunteer? volunteer;
+  final List<Volunteer> volunteers;
 
-  const _VolunteerDialog({this.volunteer});
+  const _VolunteerDialog({this.volunteer, required this.volunteers});
 
   @override
   State<_VolunteerDialog> createState() => _VolunteerDialogState();
@@ -188,8 +240,7 @@ class _VolunteerDialogState extends State<_VolunteerDialog> {
   late bool _alabanza;
   late bool _estudio;
   late bool _ensenanza;
-  late bool _canCleanWorshipHall;
-  late bool _canCleanBathrooms;
+  String? _partnerId;
   late List<AbsencePeriod> _absences;
 
   @override
@@ -201,8 +252,7 @@ class _VolunteerDialogState extends State<_VolunteerDialog> {
     _alabanza = volunteer?.availableAlabanza ?? true;
     _estudio = volunteer?.availableEstudio ?? true;
     _ensenanza = volunteer?.availableEnsenanza ?? true;
-    _canCleanWorshipHall = volunteer?.canCleanWorshipHall ?? true;
-    _canCleanBathrooms = volunteer?.canCleanBathrooms ?? true;
+    _partnerId = volunteer?.partnerId;
     _absences = List.of(volunteer?.absences ?? const []);
   }
 
@@ -244,8 +294,7 @@ class _VolunteerDialogState extends State<_VolunteerDialog> {
         availableAlabanza: _alabanza,
         availableEstudio: _estudio,
         availableEnsenanza: _ensenanza,
-        canCleanWorshipHall: _canCleanWorshipHall,
-        canCleanBathrooms: _canCleanBathrooms,
+        partnerId: _partnerId,
         absences: _absences,
       ),
     );
@@ -310,23 +359,34 @@ class _VolunteerDialogState extends State<_VolunteerDialog> {
                       setState(() => _ensenanza = value ?? false),
                 ),
                 const Divider(),
-                Text(
-                  'Puestos que puede realizar',
-                  style: Theme.of(context).textTheme.titleSmall,
-                ),
-                CheckboxListTile(
-                  contentPadding: EdgeInsets.zero,
-                  title: const Text('Aseo de sala de culto'),
-                  value: _canCleanWorshipHall,
-                  onChanged: (value) =>
-                      setState(() => _canCleanWorshipHall = value ?? false),
-                ),
-                CheckboxListTile(
-                  contentPadding: EdgeInsets.zero,
-                  title: const Text('Aseo de baños'),
-                  value: _canCleanBathrooms,
-                  onChanged: (value) =>
-                      setState(() => _canCleanBathrooms = value ?? false),
+                DropdownButtonFormField<String>(
+                  initialValue: _partnerId,
+                  decoration: const InputDecoration(
+                    labelText: 'Trabaja en pareja con',
+                    helperText: 'La pareja se asignará junta los sábados',
+                    border: OutlineInputBorder(),
+                  ),
+                  items: [
+                    const DropdownMenuItem(
+                      value: '',
+                      child: Text('— Sin pareja —'),
+                    ),
+                    ...widget.volunteers
+                        .where(
+                          (candidate) => candidate.id != widget.volunteer?.id,
+                        )
+                        .map(
+                          (candidate) => DropdownMenuItem(
+                            value: candidate.id,
+                            child: Text(candidate.name),
+                          ),
+                        ),
+                  ],
+                  onChanged: (value) => setState(
+                    () => _partnerId = value == null || value.isEmpty
+                        ? null
+                        : value,
+                  ),
                 ),
                 const Divider(),
                 Row(
